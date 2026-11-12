@@ -207,13 +207,64 @@ docs/company/runs/001-mvp/roadmap.md 의 모든 기능 상태가 "완료"이고 
 | 병렬 개발 | v1은 순차. 안정화 후 worktree 병렬 검토 |
 | 파일럿 | 이 레포 `examples/`에 작은 샘플 앱을 두고 `/company:run`으로 신규 흐름 검증 |
 
-### 남은 미결
-- [ ] 파일럿 샘플 앱의 스택
-- [ ] 위험 작업 기본 목록 확정 (안: DB 마이그레이션, 대량 삭제, 의존성 메이저 업그레이드, 결제·배포·외부 API 연동, 시크릿 변경)
+| 파일럿 스택 | Spring Boot + React(Vite) — `examples/` |
 
 ---
 
-## 10. 구현 순서 (제안)
+## 10. 승인 정책 (위험 작업)
+
+**원칙: DB는 SELECT만 자유. 그 외 DB 작업은 전부 사람 승인.**
+INSERT / UPDATE / DELETE / DDL / 마이그레이션 실행 / 시드 투입 모두 포함.
+
+| 대상 | 정책 |
+|---|---|
+| 임시 테스트 DB (테스트가 띄우고 지우는 testcontainers, 인메모리, 테스트 전용 docker DB) | 예외 — 자유 사용 |
+| 그 외 모든 DB (로컬 개발, 공용, 스테이징, 운영) | SELECT만 허용, 나머지는 승인 |
+| 파일·모듈 대량 삭제, 의존성 메이저 업그레이드, 결제·배포·외부 API 연동, 시크릿·환경 변수 변경 | 승인 |
+
+- 어떤 DB가 "임시 테스트 DB"인지는 `profile.md`의 DB 목록에 명시한다. 목록에 없으면 영구 DB로 간주.
+- 기획 단계에서 예상되는 승인 대상은 roadmap `위험` 열에 적고 기획 검토 때 일괄 사전 승인 → 루프 중 멈춤 최소화.
+
+### 3중 방어
+1. **프롬프트 규칙** — 개발·QA 에이전트와 플레이북에 명시
+2. **프로젝트 훅** — `/company:init`이 프로젝트 `.claude/settings.json`에 PreToolUse 훅 설치. DB 클라이언트(`psql`, `mysql`, `mongosh`, `redis-cli` 등) 명령에서 쓰기 구문을 감지하면 차단. 플러그인 훅은 전역이라 쓰지 않는다
+3. **DB MCP 사용 시** 읽기 전용 계정·도구만
+
+---
+
+## 11. 외부 스킬
+
+**방침: 필요한 것만 우리 플러그인 안으로 복사(vendoring)**, 출처·라이선스 표기, 필요하면 다듬는다.
+외부 플러그인을 통째로 설치하지 않음 → 그 플러그인의 전역 훅·자체 워크플로우와 충돌 없음, 설치 하나로 동작.
+
+```
+plugins/company/skills/vendor/<원본>/<스킬>/SKILL.md   # 상단에 출처 URL, 라이선스, 복사 시점, 수정 내역
+```
+
+| 에이전트 | 붙일 스킬 (`skills:` 주입, 에이전트당 2개 이내) | 출처 |
+|---|---|---|
+| plan-researcher | – | – |
+| plan-analyst | – (권장: 스택별 LSP 플러그인은 사용자가 설치) | 공식 마켓플레이스 |
+| plan-planner | – (brainstorming은 대화형이라 서브에이전트 부적합, 원칙만 플레이북에) | – |
+| dev-lead | verification-before-completion | obra/superpowers |
+| dev-backend | test-driven-development, systematic-debugging | obra/superpowers |
+| dev-frontend | frontend-design, test-driven-development | anthropics, obra/superpowers |
+| qa-lead | verification-before-completion | obra/superpowers |
+| qa-tester | webapp-testing (Playwright) | anthropics/skills |
+| qa-reviewer | 내장 `/code-review`, `/security-review` 활용 지시 | Claude Code 내장 |
+| mkt-marketer | product-marketing-context, copywriting, launch-strategy, social-content 중 단계별 필요한 것 | coreyhaines31/marketingskills |
+
+- `skills:`는 시작 시 전문을 주입 → 토큰 비용. 마케팅처럼 여러 개가 필요하면 주입 대신 "필요할 때 해당 파일을 Read"로 지시.
+- 권장 MCP(선택, 사용자 설치): Context7(라이브러리 문서) → dev-*, Playwright MCP → qa-tester.
+- 넣지 않는 것: superpowers 전체 설치(자체 워크플로우 유도), security-guidance(전역 훅), 메모리 플러그인(상태는 docs/company/에 있음).
+- 구현 시 각 원본의 라이선스와 정확한 스킬 이름을 확인 후 복사. 라이선스가 복사를 허용하지 않으면 원칙만 플레이북에 요약.
+
+### 남은 미결
+- (없음 — 구현 단계에서 검증할 항목은 8번 표 참고)
+
+---
+
+## 12. 구현 순서 (제안)
 
 1. 플러그인 골격 + marketplace.json
 2. templates + `/company:init` → 빈 프로젝트·기존 프로젝트 각각에서 profile 생성 확인
