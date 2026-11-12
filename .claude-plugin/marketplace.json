@@ -1,0 +1,19 @@
+{
+  "name": "sub-agent-team-base",
+  "owner": {
+    "name": "swchoi1997"
+  },
+  "metadata": {
+    "description": "Subagent-based 'AI company' template for Claude Code: planning, development, QA and marketing teams."
+  },
+  "plugins": [
+    {
+      "name": "company",
+      "source": "./plugins/company",
+      "description": "Run a project like a company: one request -> planning -> human review -> per-feature dev and QA loop -> report.",
+      "version": "0.1.0",
+      "category": "productivity",
+      "keywords": ["subagents", "orchestration", "planning", "qa", "workflow"]
+    }
+  ]
+}

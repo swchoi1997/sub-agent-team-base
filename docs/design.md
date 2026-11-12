@@ -3,7 +3,7 @@
 > 목표: 어떤 프로젝트(신규·기존)에도 플러그인 설치 + `/company:init` 한 번으로 붙여 쓰는 "서브에이전트 기반 회사".
 > 서비스 요청 한 번 → 기획 → 사람 검토 → 기능별 개발·QA 자동 진행 → 완료 보고.
 
-상태: **설계 확정, 구현 전.** 구현하면서 실제 동작을 확인할 항목은 15번에 모아 둔다.
+상태: **v0.1.0 구현됨** (`plugins/company/`). 구현 중 확인한 사실과 남은 검증은 15번.
 
 ---
 
@@ -76,7 +76,7 @@
 | 팀장 모드 | depth ≥ 2 | 메인 → 팀장 에이전트 → 팀원. 팀원 상세는 팀장 컨텍스트에 갇힘 |
 | 평면 모드 | depth = 1 (클라우드 세션은 `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`로 확인) | 메인이 팀장 플레이북을 직접 수행, 팀원만 서브에이전트 |
 
-- **감지**: 플로우 스킬 동적 주입 `` !`echo ${CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH:-3}` ``
+- **감지**: 플로우 스킬 동적 주입 `` !`printenv CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH || echo "unset (default 3)"` `` + `allowed-tools`로 그 명령만 허용 (15번 참고)
 - **런타임 폴백**: 팀장이 "팀원 생성 불가"를 보고하면 메인이 그 run을 평면 모드로 전환하고 log에 기록
 - **팀장 절차는 한 곳에만**: `playbooks/<team>-lead.md`. 팀장 에이전트 본문은 역할 정의 + "이 플레이북을 따르라". 평면 모드에서는 메인이 같은 파일을 읽는다
 - 평면 모드는 메인 컨텍스트가 빨리 찬다 → 보고 10줄 제한 엄격히, 상세는 파일로. 상태는 항상 파일에 먼저 쓰고 나서 보고(자동 압축·끊김 대비)
@@ -97,16 +97,19 @@ plugins/company/
     mkt-marketer.md
   skills/                       # 진입점은 모두 disable-model-invocation: true
     init/  run/  feature/  bugfix/  resume/  status/
-    vendor/<원본>/<스킬>/         # 복사한 외부 스킬
-  playbooks/                    # 팀장 절차 (두 모드 공용) + 공통 규칙
-    plan-lead.md  dev-lead.md  qa-lead.md
-    common-rules.md             # 보고 형식, 에스컬레이션, 금지 행동
+  playbooks/
+    common-rules.md             # 보고 형식, 승인 정책, 증거·범위 규칙 (모든 에이전트)
+    orchestrator.md             # 메인 세션 전용: 모드, 위임, 승인 처리, 기능 루프, 멈춤, goal
+    plan-lead.md  dev-lead.md  qa-lead.md   # 팀장 절차 (두 모드 공용)
   templates/
-    profile.md  product.md  prd.md  roadmap.md  qa-report.md  log.md  claude-md-section.md
+    profile.md  product.md  api-contract.md  request.md  prd.md  roadmap.md
+    qa-report.md  log.md  baseline.md  claude-md-section.md
   project-hooks/                # init이 프로젝트에 복사·등록하는 훅 원본
-    db-guard.sh
+    db-guard.sh  settings.snippet.json
+  vendor/<원본>/<스킬>/           # 복사한 외부 스킬 (skills/ 밖: 슬래시 커맨드·자동 로드 안 됨)
 docs/design.md
-examples/                       # 파일럿 (Spring Boot + React)
+examples/                       # 파일럿 안내 (Spring Boot + React)
+tests/db-guard.test.sh          # 훅 테스트
 ```
 
 ---
@@ -293,7 +296,12 @@ INSERT / UPDATE / DELETE / DDL / 마이그레이션 *실행* / 시드 투입 포
 
 ## 11. 외부 스킬
 
-필요한 것만 `skills/vendor/`에 복사. 상단에 출처 URL, 라이선스, 복사 시점, 수정 내역. 라이선스가 복사를 허용하지 않으면 원칙만 플레이북에 요약.
+필요한 것만 `plugins/company/vendor/`에 **원본 그대로** 복사하고, 출처·라이선스·커밋·복사일은 `vendor/README.md`에 기록.
+우리 구조에 맞춘 해석 규칙(사람에게 묻기 → 팀장에게 보고 등)은 파일을 고치지 않고 `common-rules.md` §7에 둔다.
+`skills/` 밖에 두는 이유: 슬래시 커맨드로 노출되거나 자동 로드되지 않게. 에이전트는 `${CLAUDE_PLUGIN_ROOT}/vendor/...`를 필요할 때 Read 한다(`skills:` 주입 대신 — 토큰 절약, 이름 해석 불확실성 회피).
+
+라이선스: superpowers MIT, anthropics/skills Apache-2.0, marketingskills MIT — 모두 복사 가능.
+superpowers에는 실제로 SessionStart 전역 훅이 있음을 확인 → 통째 설치하지 않는 결정 유지.
 
 | 에이전트 | 붙일 스킬 (에이전트당 2개 이내) | 출처 |
 |---|---|---|
@@ -303,7 +311,9 @@ INSERT / UPDATE / DELETE / DDL / 마이그레이션 *실행* / 시드 투입 포
 | dev-frontend | frontend-design, test-driven-development | anthropics, obra/superpowers |
 | qa-tester | webapp-testing (Playwright) | anthropics/skills |
 | qa-reviewer | 내장 `/code-review`, `/security-review` 활용 지시 | Claude Code 내장 |
-| mkt-marketer | product-marketing-context, copywriting, launch-strategy, social-content — 주입하지 않고 단계별로 Read | coreyhaines31/marketingskills |
+| mkt-marketer | product-marketing(포지셔닝), launch(출시·채널 계획) + references/shipped-changes.md(릴리즈 노트) — 단계별로 Read | coreyhaines31/marketingskills |
+
+- 원본 레포의 현재 이름은 `product-marketing`, `launch`, `copywriting`, `social`. 선택한 마케팅 산출물(포지셔닝·출시 계획·릴리즈 노트)에는 앞의 둘로 충분해서 copywriting·social은 복사하지 않음.
 
 - `skills:`는 시작 시 전문을 주입하므로 토큰 비용이 든다
 - 권장 MCP(선택, 사용자 설치): Context7 → dev-*, Playwright MCP → qa-tester, 스택별 LSP 플러그인 → plan-analyst·dev-*
@@ -342,15 +352,30 @@ INSERT / UPDATE / DELETE / DDL / 마이그레이션 *실행* / 시드 투입 포
 
 ## 15. 구현 중 확인할 항목
 
+### 구현 중 확인한 것 (v0.1.0)
+
+| 항목 | 결과 |
+|---|---|
+| 플러그인 로드 | `claude plugin validate` 통과. `claude --plugin-dir` 로 스킬 6개·에이전트 13개·훅 0개 로드, 상시 비용 약 1.4k 토큰 |
+| 에이전트 이름 | 서브에이전트 타입이 `company:plan-lead` 등으로 노출됨 → 플레이북의 위임 이름과 일치 |
+| 동적 주입 권한 | 스킬의 `` !`cmd` ``도 Bash 권한 검사를 받는다. `${VAR:-x}` 형태는 거부("A variable in braces can't be checked"), 읽기 전용 기본 허용 목록 밖 명령(`printenv`)은 승인 필요 → 깊이 감지는 `printenv` + 스킬 frontmatter `allowed-tools: Bash(printenv CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH)`로 해결, 나머지 주입은 `cat`/`git`/`ls`/`test`만 사용 |
+| `/company:status` | 빈 레포에서 정상 동작 (init 안내) |
+| `/company:init` (신규, 클라우드) | 유형·Docker 없음·깊이 1(flat) 정확히 감지, profile·product·api-contract·CLAUDE.md 블록 생성. `.claude/` 쓰기는 보호 경로라 권한 확인에서 멈추고 우회하지 않음 (대화형 세션에선 권한 프롬프트로 처리) |
+| db-guard 훅 | `tests/db-guard.test.sh` 33건 통과 (SELECT·무관 명령 허용, DML/DDL/마이그레이션/파일 입력/Mongo/Redis 쓰기 → ask) |
+| 외부 스킬 라이선스·이름 | 확인 완료 (11번) |
+
+### 아직 실제로 확인하지 않은 것
+
 | 항목 | 확인 방법 | 안 될 때 |
 |---|---|---|
-| `Agent(...)` 허용 목록이 서브에이전트 안에서 무시되는지 | 테스트 에이전트로 실험 | 이미 프롬프트 규칙으로 설계됨 |
-| `/goal` 동작과 판정 방식 | 실제 실행 | "보고 없이 계속" 규칙만으로 루프 |
+| `/company:run` 전체 루프 (기획→검토→F0→기능 루프→마무리) | 파일럿 (`examples/README.md`) | 플레이북 수정 |
+| 팀장 모드 (깊이 ≥2)에서 팀장이 팀원을 띄우는지 | 로컬 터미널에서 파일럿 | 런타임 폴백으로 평면 모드 |
+| `Agent(...)` 허용 목록이 서브에이전트 안에서 무시되는지 | 실험 | 이미 프롬프트 규칙으로 설계됨 |
+| `/goal` 동작과 판정 방식 | 실제 실행 | "보고 없이 계속" 규칙(orchestrator D.10)만으로 루프 |
 | 플러그인 에이전트와 같은 이름의 프로젝트 에이전트 우선순위 | 실험 | 커스터마이즈 가이드 수정 |
-| 훅 `ask` 결정이 서브에이전트 안에서 어떻게 동작하는지 | 실험 | 서브에이전트 호출 시 `deny`로 |
-| SendMessage를 클라우드·데스크톱에서 쓸 수 있는지 | 실험 | 새 위임 폴백 |
-| 서브에이전트 결과에서 토큰·시간 수치를 얻을 수 있는지 | 실험 | 측정 항목 축소 |
-| 외부 스킬 라이선스와 정확한 이름 | 원본 레포 확인 | 원칙만 요약 |
+| 훅 `ask`가 서브에이전트 호출에서 어떻게 보이는지 | 파일럿 | 서브에이전트 호출 시 `deny`로 |
+| SendMessage 재작업 (클라우드·데스크톱) | 파일럿 | 새 위임 폴백 (이미 규칙에 있음) |
+| 서브에이전트 결과의 토큰·시간 수치 | 파일럿 | 측정 항목 축소 |
 
 ---
 
