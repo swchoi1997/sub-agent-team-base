@@ -1,0 +1,11 @@
+{
+  "name": "company",
+  "version": "0.1.0",
+  "description": "Subagent-based AI company: planning, development, QA and marketing teams driven by /company:* flows, with human approval gates.",
+  "author": {
+    "name": "swchoi1997"
+  },
+  "repository": "https://github.com/swchoi1997/sub-agent-team-base",
+  "license": "MIT",
+  "keywords": ["subagents", "orchestration", "planning", "qa", "workflow"]
+}
