@@ -81,6 +81,7 @@ tr.hl td{background:color-mix(in srgb,var(--dr) 12%,transparent)}
 pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:0;line-height:1.55;position:relative}
 .codebox{position:relative}
 .copy{position:absolute;top:8px;right:8px;font-size:.72rem;padding:.2em .6em;z-index:1}
+@media (max-width:600px){.codebox pre{padding-top:38px}}
 
 /* ---------- top bar ---------- */
 .topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
@@ -130,6 +131,27 @@ pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;p
 .easy-key .k b.hl{color:var(--accent-ink)}
 .easy-nums{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px;font-family:var(--mono);font-size:.85rem}
 .easy-nums span b{font-size:1.05rem}
+
+
+/* ---------- use cases & build ---------- */
+.uc-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 12px}
+.uc-chips button{border-radius:999px;font-size:.85rem}
+.uc-detail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.uc-detail{grid-template-columns:minmax(0,1fr)}}
+.uc-q{font-size:1.02rem;font-weight:600;margin:0 0 6px}
+.uc-label{font-family:var(--mono);font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 4px}
+.uc-detail pre{font-size:.78rem}
+.fit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-top:14px}
+@media (max-width:820px){.fit{grid-template-columns:minmax(0,1fr)}}
+.fit .k{background:var(--surface-2);border-radius:8px;padding:12px 14px;font-size:.88rem}
+.fit ul{margin:.3em 0 0;padding-left:1.1em}
+.fit li{margin:.2em 0}
+.pipe{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;margin:6px 0 4px}
+.pipe .st{flex:1 1 140px;border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--bg);font-size:.82rem;line-height:1.45}
+.pipe .st b{display:block;font-size:.88rem;margin-bottom:2px}
+.pipe .st .n{font-family:var(--mono);font-size:.7rem;color:var(--accent-ink)}
+.pipe .ar{align-self:center;color:var(--muted);font-family:var(--mono)}
+@media (max-width:820px){.pipe .ar{display:none}}
 
 /* ---------- comparison columns ---------- */
 .col h3{margin-top:0}
@@ -230,7 +252,7 @@ svg text{font-family:var(--font)}
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:12px;overflow-x:auto}
 .tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--text-2);padding:.5em .8em;white-space:nowrap}
 .tabs button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--dr)}
-.panel[hidden]{display:none}
+.panel[hidden],.bpanel[hidden]{display:none}
 .check{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);font-size:.92rem}
 .check input{margin-top:6px;accent-color:var(--dr)}
 .check:has(input:checked) span{color:var(--muted);text-decoration:line-through}
@@ -250,7 +272,7 @@ details summary{cursor:pointer;color:var(--text-2);font-size:.85rem;margin-top:8
   <div class="wrap">
     <span class="brand">DR-DCI</span>
     <nav class="toc" id="toc" aria-label="섹션">
-      <a href="#easy">쉽게 보기</a><a href="#problem">문제</a><a href="#dci">DCI 입문</a><a href="#pull">pull 루프</a><a href="#arch">아키텍처</a><a href="#reset">컨텍스트 리셋</a><a href="#results">메인 결과</a><a href="#scaling">스케일링</a><a href="#wiki">Wiki-18</a><a href="#ablation">어블레이션</a><a href="#related">관련 연구</a><a href="#guide">재현 가이드</a><a href="#limits">한계·인용</a>
+      <a href="#easy">쉽게 보기</a><a href="#build">활용·구성</a><a href="#problem">문제</a><a href="#dci">DCI 입문</a><a href="#pull">pull 루프</a><a href="#arch">아키텍처</a><a href="#reset">컨텍스트 리셋</a><a href="#results">메인 결과</a><a href="#scaling">스케일링</a><a href="#wiki">Wiki-18</a><a href="#ablation">어블레이션</a><a href="#related">관련 연구</a><a href="#guide">재현 가이드</a><a href="#limits">한계·인용</a>
     </nav>
     <button class="theme-btn" id="themeBtn" aria-label="테마 전환">☀︎ / ☾</button>
   </div>
@@ -320,6 +342,150 @@ details summary{cursor:pointer;color:var(--text-2);font-size:.85rem;margin-top:8
           <div class="muted" style="font-size:.75rem;margin-top:6px">100문항 중 정답 수. “RAG식 검색”은 BM25 top-5 스니펫(결과당 512토큰)만 받는 공식 기준선입니다.</div>
         </div>
       </div>
+    </div>
+
+    <div class="easy" id="build" aria-labelledby="buildTitle">
+      <span class="easy-tag">그래서 뭘 할 수 있나</span>
+      <h2 id="buildTitle">이런 질문에 강합니다: “여러 조건을 동시에 만족하는 근거를 문서 더미에서 찾아 확인하기”</h2>
+      <p class="lead">정확한 문자열(이름, 코드, 날짜, 조항 문구)로 걸러야 하고, 여러 문서를 대조해야 답이 나오는 질문에서 RAG와 차이가 커집니다. 사례를 눌러 보세요.</p>
+      <div class="uc-chips" id="ucChips" role="tablist" aria-label="활용 사례"></div>
+      <div class="uc-detail" id="ucDetail" aria-live="polite"></div>
+      <div class="fit">
+        <div class="k"><b style="color:var(--accent-ink)">잘 맞는 경우</b>
+          <ul>
+            <li>사내 문서·위키·회고, 로그, 티켓, 계약서처럼 <b>정확한 단서</b>가 있는 텍스트</li>
+            <li>답에 <b>근거 위치(파일·줄)</b>를 남겨야 하는 조사·감사 업무</li>
+            <li>몇 분 걸려도 되는 <b>비동기 “딥 리서치”</b> 작업 (논문 기준 문항당 평균 146초)</li>
+          </ul>
+        </div>
+        <div class="k"><b style="color:var(--raw-ink)">안 맞는 경우</b>
+          <ul>
+            <li>바로 답해야 하는 실시간 챗봇</li>
+            <li>“요즘 고객 반응 어때?”처럼 정확한 단서 없는 넓은 질문 (리트리버 품질이 상한)</li>
+            <li>코퍼스 <b>전수 집계</b>: 워크스페이스는 끌어온 ~1천 건만 봅니다</li>
+            <li>실시간 웹 검색, 스캔 이미지 (논문 범위 밖, 텍스트 추출 선행 필요)</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2 style="margin-top:28px">어떻게 구성하나: 사내 장애 회고 문서 50만 건 예시</h2>
+      <p class="lead">논문 구성(Pi 하네스 + 리트리버 + 하드링크 워크스페이스)을 일반 서비스에 옮긴다면 이런 모양입니다. 처음엔 임베딩 없이 <b>BM25로 시작</b>해도 됩니다(논문 BCP-100 기준 BM25 80/100, dense 82/100).</p>
+      <div class="pipe" aria-label="구성 단계">
+        <div class="st"><span class="n">1 · 코퍼스</span><b>문서 1개 = 텍스트 파일 1개</b>셸 안전 파일명, 메타데이터는 JSONL 분리, 한 줄짜리 문서는 1200자로 리플로</div><span class="ar">→</span>
+        <div class="st"><span class="n">2 · 인덱스</span><b>BM25 먼저</b>Pyserini·Elasticsearch 등. 나중에 dense로 교체</div><span class="ar">→</span>
+        <div class="st"><span class="n">3 · pull 도구</span><b>검색 → 중복 제거 → 하드링크</b>질문별 폴더에 root-flat으로, 상위 20개 프리뷰 반환</div><span class="ar">→</span>
+        <div class="st"><span class="n">4 · 샌드박스</span><b>읽기 전용 셸</b>rg·grep·find·ls·read만, 출력 2000줄/10KB, 30초 제한</div><span class="ar">→</span>
+        <div class="st"><span class="n">5 · 에이전트</span><b>도구 3개 + 규칙</b>pull · bash · read, 답에 근거 인용, 비동기 큐로 실행</div>
+      </div>
+      <div class="tabs mt" role="tablist" id="buildTabs">
+        <button role="tab" aria-selected="true" data-p="b1">폴더 구조</button>
+        <button role="tab" aria-selected="false" data-p="b2">도구 정의</button>
+        <button role="tab" aria-selected="false" data-p="b3">시스템 프롬프트</button>
+        <button role="tab" aria-selected="false" data-p="b4">샌드박스</button>
+        <button role="tab" aria-selected="false" data-p="b5">실행 예시</button>
+      </div>
+      <div class="bpanel" id="b1"><div class="codebox"><button class="copy" data-copy="bc1">복사</button><pre id="bc1">/data
+├─ corpus/                 # 원본 텍스트 (읽기 전용, 불변)
+│  ├─ pm_2024-03-14_pg_timeout.txt
+│  ├─ pm_2024-05-02_db_failover.txt
+│  └─ ... (50만 개)
+├─ meta/docs.jsonl         # {"file": ..., "title": ..., "url": ..., "team": ..., "date": ...}
+├─ index/bm25/             # 검색 인덱스
+└─ workspaces/             # 질문별 작업 공간 (corpus와 같은 파일시스템! 하드링크 조건)
+   └─ q_8f2a/              # pull 할 때마다 여기에 하드링크가 추가됨 (하위 폴더 없음)
+      ├─ pm_2024-03-14_pg_timeout.txt  -> 같은 inode
+      └─ ...</pre></div></div>
+      <div class="bpanel" id="b2" hidden><div class="codebox"><button class="copy" data-copy="bc2">복사</button><pre id="bc2">[
+  {
+    "name": "pull",
+    "description": "숨겨진 전체 문서에서 후보를 검색해 워크스페이스에 추가한다. 이미 있는 문서는 다시 넣지 않는다. 반환: 신규/기존/전체 문서 수, 새 문서 상위 20개 파일명. 순위는 참고 신호일 뿐 근거가 아니다.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": { "type": "string", "description": "검색어" },
+        "top_k": { "type": "integer", "minimum": 300, "maximum": 600 }
+      },
+      "required": ["query", "top_k"]
+    }
+  },
+  {
+    "name": "bash",
+    "description": "워크스페이스에서 읽기 전용 명령(rg, grep, find, ls, head, wc, sort, uniq)을 실행한다. 출력은 마지막 2000줄/10KB까지, 30초 제한.",
+    "input_schema": {
+      "type": "object",
+      "properties": { "command": { "type": "string" } },
+      "required": ["command"]
+    }
+  },
+  {
+    "name": "read",
+    "description": "파일의 일부를 줄 단위로 읽는다.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "path":   { "type": "string" },
+        "offset": { "type": "integer", "description": "시작 줄" },
+        "limit":  { "type": "integer", "description": "읽을 줄 수" }
+      },
+      "required": ["path"]
+    }
+  }
+]</pre></div></div>
+      <div class="bpanel" id="b3" hidden><div class="codebox"><button class="copy" data-copy="bc3">복사</button><pre id="bc3">당신은 사내 문서 조사 에이전트다.
+전체 문서는 직접 볼 수 없고, pull로 가져온 워크스페이스 파일만 볼 수 있다.
+
+규칙
+1. 질문의 핵심 단서로 pull(query, top_k)을 호출한다. top_k는 300~600 사이에서 고른다.
+2. pull 직후에는 반드시 워크스페이스를 먼저 rg/grep/read로 조사한다.
+   pull 결과의 순위 목록은 어디부터 볼지 정하는 신호일 뿐, 답의 근거가 아니다.
+3. 진짜 새로운 단서(새 이름, 날짜, 식별자)가 생겼거나 증거가 부족할 때만 다시 pull한다.
+4. 여러 파일을 가로지르는 검색(rg -l A | xargs rg -l B)으로 조건을 좁히고,
+   read로 정확한 구간을 확인한 뒤에 답한다.
+5. 답에는 근거 파일명과 줄 번호를 붙이고, 마지막에 신뢰도(0~100)를 적는다.
+   근거를 확인하지 못했으면 추측하지 말고 "확인 불가"라고 답한다.</pre></div>
+        <p class="muted" style="font-size:.78rem">1–3번은 논문 프롬프트의 지시를 옮긴 것이고, 4–5번은 이 예시에서 덧붙인 규칙입니다. 5번의 신뢰도와 “확인 불가”는 컨텍스트 리셋 트리거(신뢰도 ≤ 70 + 기권)에 그대로 쓸 수 있습니다.</p></div>
+      <div class="bpanel" id="b4" hidden><div class="codebox"><button class="copy" data-copy="bc4">복사</button><pre id="bc4"># 질문 하나 = 컨테이너 하나 (네트워크 차단, 루트 파일시스템 읽기 전용)
+docker run --rm --network none --read-only \
+  -v /data/corpus:/data/corpus:ro \
+  -v /data/workspaces/q_8f2a:/ws:ro \
+  -w /ws agent-shell:latest \
+  timeout 30s bash -c "$COMMAND" 2>&1 | tail -n 2000 | tail -c 10240
+
+# 하드링크는 하네스(pull 도구)가 컨테이너 밖에서 만든다:
+#   os.link("/data/corpus/<file>", "/data/workspaces/q_8f2a/<file>")
+# 명령 허용 목록: rg grep find ls head wc sort uniq cat
+# 작업이 끝난 workspaces/q_* 폴더는 주기적으로 삭제 (하드링크라 원본은 안전)</pre></div>
+        <p class="muted" style="font-size:.78rem">논문은 실행 계층이 에이전트를 검색·읽기로만 제한하고 원본 저장소를 불변으로 둡니다. 위 명령은 그 원칙을 컨테이너로 옮긴 예시입니다. 하드링크는 같은 파일시스템 안에서만 만들 수 있습니다.</p></div>
+      <div class="bpanel" id="b5" hidden><div class="codebox"><button class="copy" data-copy="bc5">복사</button><pre id="bc5">Q: 2024년 상반기 결제 장애 중 원인이 외부 PG사 타임아웃이었던 건과 각각의 재발 방지책은?
+
+▶ pull(query="결제 장애 회고 PG 타임아웃", top_k=400)
+  Workspace expanded. New documents added: 400 · Total visible: 400
+  1. pm_2024-03-14_pg_timeout.txt  2. pm_2023-11-20_pg_latency.txt ...
+
+▶ bash: rg -l -i 'timeout|타임아웃' | xargs rg -l 'PG' | xargs rg -l '2024-0[1-6]'
+  pm_2024-03-14_pg_timeout.txt
+  pm_2024-05-27_checkout_5xx.txt
+
+▶ read(path="pm_2024-05-27_checkout_5xx.txt", offset=30, limit=25)
+  41 | 근본 원인: PG사 B 승인 API 응답 지연(p99 12s) → 결제 서버 타임아웃
+  ...  "PG사 B"라는 새 단서 발견
+
+▶ pull(query="PG사 B 승인 API 지연 장애", top_k=300)
+  New documents added: 214 · Already visible from previous pulls: 86 · Total visible: 614
+
+▶ bash: rg -l 'PG사 B' | xargs rg -l '2024-0[1-6]'
+  pm_2024-05-27_checkout_5xx.txt
+  pm_2024-06-09_pg_b_retry_storm.txt
+
+▶ read(...) × 3   # 각 문서의 "재발 방지" 구간 확인
+
+A: 3건입니다.
+   1) 2024-03-14 PG사 A 타임아웃 → 서킷 브레이커 도입 [pm_2024-03-14_pg_timeout.txt:52-60]
+   2) 2024-05-27 PG사 B 응답 지연 → 타임아웃 3s→8s, 비동기 승인 확인 [pm_2024-05-27_checkout_5xx.txt:41-58]
+   3) 2024-06-09 PG사 B 재시도 폭주 → 지수 백오프 적용 [pm_2024-06-09_pg_b_retry_storm.txt:33-47]
+   신뢰도: 85</pre></div>
+        <p class="muted" style="font-size:.78rem">가상의 데이터로 만든 흐름 예시입니다. 두 번째 pull이 첫 조사에서 나온 새 단서(“PG사 B”)로 호출되고, 중복 86건이 자동으로 걸러지는 점이 핵심입니다.</p></div>
+      <p class="muted" style="font-size:.78rem;margin-top:12px">이 박스의 사례·설정·트레이스는 논문 결과를 바탕으로 만든 <b>적용 예시</b>이며, 논문이 실험한 시나리오가 아닙니다. 수치 근거는 아래 본문의 표를 참고하세요.</p>
     </div>
     <p class="authors">Yi Lu*†, Zhuofeng Li*, Ping Nie†, Haoxiang Zhang, Yuyu Zhang, Kai Zou, Wenhu Chen, Jimmy Lin, Dongfu Jiang⊠, Yu Zhang⊠ — University of Toronto · Texas A&amp;M · University of Waterloo · UC San Diego · Verdent AI · Netmind AI<br>(*공동 1저자, †프로젝트 리드, ⊠교신저자)</p>
     <div class="hero-stats">
@@ -1271,6 +1437,55 @@ hbars($("#wallChart"), [
   }
   draw(); redraws.push(draw); new ResizeObserver(draw).observe(box);
 })();
+
+
+/* ---------- use cases ---------- */
+(function uc(){
+  const cases = [
+    {t:"사내 위키·장애 회고", q:"2024년 상반기 결제 장애 중 원인이 외부 PG사 타임아웃이었던 건과 각각의 재발 방지책은?",
+     pull:'pull("결제 장애 회고 PG 타임아웃", top_k=400)',
+     cmd:"rg -l -i 'timeout|타임아웃' \\\n  | xargs rg -l 'PG' \\\n  | xargs rg -l '2024-0[1-6]'\nread(path=..., offset=30, limit=25)",
+     why:"기간·원인·도메인 세 조건의 교집합이고, 답이 여러 문서에 흩어져 있습니다. RAG의 top-5 스니펫은 일부 건을 놓치기 쉽고, 문서끼리 대조할 수 없습니다.",
+     note:"→ 맨 아래 ‘실행 예시’ 탭에 이 질문의 전체 흐름이 있습니다."},
+    {t:"로그·장애 분석", q:"오류 코드 E-4031이 처음 나타난 시각과, 그 직전에 배포된 서비스는?",
+     pull:'pull("E-4031 오류 배포 직후", top_k=500)',
+     cmd:"rg -n 'E-4031' | sort | head -1\nrg -n 'deploy|배포' | rg '2024-08-1[23]' | sort | tail -5",
+     why:"E-4031 같은 식별자는 정확한 문자열 매칭이 필요하고, ‘처음’·‘직전’은 정렬 같은 연산이 필요합니다. 임베딩 검색은 의미 유사도로 찾기 때문에 둘 다 약합니다.",
+     note:"로그는 시간 단위로 잘라 ‘파일 하나 = 문서 하나’로 만들면 됩니다."},
+    {t:"고객 지원 티켓", q:"‘중복 결제’와 ‘iOS 17’을 함께 언급한 환불 티켓들의 공통 앱 버전은?",
+     pull:'pull("환불 중복 결제 iOS 17", top_k=600)',
+     cmd:"rg -l '중복 결제' | xargs rg -l 'iOS 17' > hits\nxargs rg -o 'app_version: [0-9.]+' < hits | sort | uniq -c | sort -rn",
+     why:"두 조건을 동시에 만족하는 티켓만 고른 뒤 버전별로 세야 합니다. RAG는 몇 개 스니펫만 보므로 이런 교차·빈도 질문에 구조적으로 약합니다.",
+     note:"주의: 집계는 워크스페이스(끌어온 문서) 안에서만 정확합니다. 전체 건수가 필요하면 별도 쿼리가 맞습니다."},
+    {t:"계약서·규정 검토", q:"자동 갱신 조항이 있으면서 해지 통보 기한이 30일 미만인 공급 계약은?",
+     pull:'pull("공급 계약 자동 갱신 해지 통보", top_k=400)',
+     cmd:"rg -l '자동.?갱신' | xargs rg -n '해지.{0,40}[0-9]+ ?일'\nread(path=..., offset=<조항 줄>-5, limit=20)",
+     why:"조항 문구의 정확한 매칭에 숫자 조건까지 있고, 감사 대응을 위해 원문 구간을 그대로 인용해야 합니다. read로 해당 조항 줄을 직접 확인합니다.",
+     note:"스캔 PDF는 OCR로 먼저 텍스트를 뽑아야 합니다. 한 줄로 뭉친 추출 결과는 리플로가 필요합니다."},
+    {t:"논문·특허 딥리서치", q:"2023년 이후, 기법 X를 데이터셋 Y에 적용해 지표 Z 0.8 이상을 보고한 논문의 1저자 소속은?",
+     pull:'pull("X 기법 Y 데이터셋 성능", top_k=500)',
+     cmd:"rg -l 'X' | xargs rg -l 'Y' | xargs rg -n 'Z[^0-9]{0,20}0\\.[89]'\nread(...)  # 저자·소속 확인 후 필요하면 소속명으로 다시 pull",
+     why:"여러 제약을 이어 붙이는 멀티 홉 질문으로, 논문이 평가한 BrowseComp-Plus와 가장 비슷한 유형입니다. 중간에 찾은 단서(저자명)로 다시 pull하는 흐름이 그대로 맞습니다.",
+     note:"논문이 직접 검증한 환경(BrowseComp-Plus, Wiki-18)에 가장 가까운 사례입니다."}
+  ];
+  const chips = $("#ucChips"), det = $("#ucDetail");
+  const esc = t => t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  cases.forEach((c, i) => { const b = document.createElement("button"); b.textContent = c.t; b.setAttribute("role","tab"); b.addEventListener("click", () => sel(i)); chips.appendChild(b); });
+  function sel(i){
+    const c = cases[i];
+    $$("button", chips).forEach((b,k) => { b.setAttribute("aria-pressed", k===i); b.setAttribute("aria-selected", k===i); });
+    det.innerHTML = `<div><div class="uc-label">예시 질문</div><p class="uc-q">“${esc(c.q)}”</p>
+      <div class="uc-label">왜 RAG보다 유리한가</div><p class="t2" style="margin:0;font-size:.9rem">${esc(c.why)}</p>
+      <p class="muted" style="font-size:.8rem">${esc(c.note)}</p></div>
+      <div><div class="uc-label">1) 넓게 끌어오기</div><pre>${esc(c.pull)}</pre>
+      <div class="uc-label">2) 워크스페이스 안에서 좁히고 확인하기</div><pre>${esc(c.cmd)}</pre></div>`;
+  }
+  sel(0);
+})();
+$$("#buildTabs button").forEach(b => b.addEventListener("click", () => {
+  $$("#buildTabs button").forEach(x => x.setAttribute("aria-selected", x===b));
+  $$("#build .bpanel").forEach(p => p.hidden = p.id !== b.dataset.p);
+}));
 
 /* ---------- guide tabs ---------- */
 $$("#guideTabs button").forEach(b => b.addEventListener("click", () => {
