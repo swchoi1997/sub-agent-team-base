@@ -1,0 +1,1228 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DR-DCI 해설</title>
+<meta name="description" content="DR-DCI(arXiv 2606.14885): 검색을 pull 액션으로 바꿔 Direct Corpus Interaction을 대규모 코퍼스로 확장하는 방법을 개발자용으로 정리한 인터랙티브 페이지">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ---------- tokens: dark is the default look ---------- */
+:root{
+  color-scheme: dark;
+  --bg:#0f1115; --surface:#161a20; --surface-2:#1d222a; --border:#2a313b;
+  --text:#e8eaed; --text-2:#b4bac4; --muted:#868e99;
+  --dr:#199e70; --raw:#d95926; --bm25:#3987e5; --neutral:#5d6470; --neutral-2:#3a414c;
+  --accent-ink:#4fd1a5; --raw-ink:#f0895e; --warn-bg:#2b2416; --warn-border:#6b5520; --warn-ink:#f3c969;
+  --code-bg:#0b0d10; --grid:#252b33;
+  --font: "Pretendard","Noto Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;
+  --mono: "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    color-scheme: light;
+    --bg:#fafaf8; --surface:#ffffff; --surface-2:#f2f2ef; --border:#e2e1dc;
+    --text:#111111; --text-2:#52514e; --muted:#6f6e69;
+    --dr:#1baf7a; --raw:#eb6834; --bm25:#2a78d6; --neutral:#a3a29c; --neutral-2:#d6d5d0;
+    --accent-ink:#0b7a52; --raw-ink:#b4441a; --warn-bg:#fff7e6; --warn-border:#e9c46a; --warn-ink:#7a5300;
+    --code-bg:#f4f4f1; --grid:#ebeae6;
+  }
+}
+:root[data-theme="light"]{
+  color-scheme: light;
+  --bg:#fafaf8; --surface:#ffffff; --surface-2:#f2f2ef; --border:#e2e1dc;
+  --text:#111111; --text-2:#52514e; --muted:#6f6e69;
+  --dr:#1baf7a; --raw:#eb6834; --bm25:#2a78d6; --neutral:#a3a29c; --neutral-2:#d6d5d0;
+  --accent-ink:#0b7a52; --raw-ink:#b4441a; --warn-bg:#fff7e6; --warn-border:#e9c46a; --warn-ink:#7a5300;
+  --code-bg:#f4f4f1; --grid:#ebeae6;
+}
+:root[data-theme="dark"]{ color-scheme: dark; }
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.7;overflow-x:clip}
+html{overflow-x:clip}
+a{color:var(--accent-ink)}
+code,pre,.mono{font-family:var(--mono);font-size:.88em}
+:not(pre)>code{background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:.05em .35em}
+h1,h2,h3{line-height:1.3;letter-spacing:-.01em}
+h2{font-size:clamp(1.5rem,3.2vw,2rem);margin:0 0 .4em}
+h3{font-size:1.1rem;margin:1.6em 0 .5em}
+p{margin:.6em 0}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+section{padding:72px 0;border-top:1px solid var(--border)}
+.eyebrow{font-family:var(--mono);font-size:.78rem;color:var(--accent-ink);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.4em}
+.lede{color:var(--text-2);font-size:1.05rem;max-width:760px}
+.src{font-family:var(--mono);font-size:.7rem;color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:0 .35em;white-space:nowrap;vertical-align:.1em}
+.muted{color:var(--muted)} .t2{color:var(--text-2)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px}
+.grid{display:grid;gap:16px}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:820px){.g3,.g2{grid-template-columns:minmax(0,1fr)}}
+.note{background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:8px;padding:12px 14px;font-size:.9rem;color:var(--text)}
+.note b{color:var(--warn-ink)}
+.pill{display:inline-flex;align-items:center;gap:.4em;font-size:.78rem;border:1px solid var(--border);border-radius:999px;padding:.15em .7em;color:var(--text-2);background:var(--surface)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+button,.btn{font:inherit;font-size:.88rem;color:var(--text);background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:.4em .85em;cursor:pointer}
+button:hover,.btn:hover{border-color:var(--muted)}
+button[aria-pressed="true"],button.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--text-2);font-size:.8rem}
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+tr.hl td{background:color-mix(in srgb,var(--dr) 12%,transparent)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:0;line-height:1.55;position:relative}
+.codebox{position:relative}
+.copy{position:absolute;top:8px;right:8px;font-size:.72rem;padding:.2em .6em;z-index:1}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.topbar .wrap{display:flex;align-items:center;gap:12px;height:52px}
+.brand{font-family:var(--mono);font-weight:600;white-space:nowrap}
+.toc{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.toc::-webkit-scrollbar{display:none}
+.toc a{color:var(--text-2);text-decoration:none;font-size:.8rem;padding:.25em .55em;border-radius:5px;white-space:nowrap}
+.toc a.active{color:var(--text);background:var(--surface-2)}
+#progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--dr);width:0}
+
+/* ---------- hero ---------- */
+.hero{position:relative;padding:56px 0 64px;border-top:0;overflow:hidden}
+#corpus{position:absolute;inset:0;width:100%;height:100%;opacity:.9}
+.hero .wrap{position:relative}
+.hero h1{font-size:clamp(1.9rem,5vw,3.2rem);margin:.2em 0 .3em;max-width:820px}
+.hero .sub{color:var(--text-2);max-width:700px}
+.authors{font-size:.85rem;color:var(--muted);margin-top:1em;max-width:780px}
+.hero-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:28px;max-width:860px}
+@media (max-width:700px){.hero-stats{grid-template-columns:minmax(0,1fr)}}
+.stat{background:color-mix(in srgb,var(--surface) 92%,transparent);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.stat .v{font-size:2rem;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat .k{font-size:.85rem;color:var(--text-2)}
+.hero .btn-row{margin-top:20px}
+.hero .btn{text-decoration:none}
+
+/* ---------- comparison columns ---------- */
+.col h3{margin-top:0}
+.flow{font-family:var(--mono);font-size:.8rem;background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:10px;margin:10px 0;line-height:1.9}
+.flow .arr{color:var(--muted)}
+.gauge{margin:8px 0}
+.gauge .lab{display:flex;justify-content:space-between;font-size:.8rem;color:var(--text-2)}
+.gauge .bar{height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden}
+.gauge .fill{height:100%;border-radius:0 4px 4px 0;background:var(--text-2)}
+.col.dr{border-color:color-mix(in srgb,var(--dr) 60%,var(--border))}
+
+/* ---------- terminal ---------- */
+.term{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.term-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--muted)}
+.term-head .sp{flex:1}
+.term-body{font-family:var(--mono);font-size:.8rem;padding:14px 16px;height:340px;overflow:auto;white-space:pre-wrap;word-break:break-word;line-height:1.55}
+.term-body .cmd{color:var(--accent-ink)}
+.term-body .out{color:var(--text-2)}
+.term-body .cm{color:var(--muted)}
+.caret{display:inline-block;width:.55em;background:var(--text-2);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ---------- pull stepper ---------- */
+.stepper{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.stepper{grid-template-columns:minmax(0,1fr)}}
+#wsCanvas{width:100%;height:320px;display:block;border-radius:8px;background:var(--code-bg);border:1px solid var(--border)}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.steps li{border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;background:var(--surface);transition:border-color .2s}
+.steps li .h{font-weight:600;font-size:.92rem}
+.steps li .d{font-size:.84rem;color:var(--text-2);display:none}
+.steps li.cur{border-color:var(--dr)}
+.steps li.cur .d{display:block}
+.steps li.done .h::after{content:" ✓";color:var(--accent-ink)}
+.ws-stats{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:.82rem;margin-top:10px}
+.ws-stats b{font-size:1.1rem;font-variant-numeric:tabular-nums}
+.formula{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:1.15rem;text-align:center;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow-x:auto;white-space:nowrap}
+.formula i{font-style:italic}
+
+/* ---------- architecture ---------- */
+.arch{display:flex;align-items:stretch;gap:0;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}
+.node{flex:1 1 0;min-width:130px;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;font-size:.85rem;line-height:1.4}
+.node .nt{font-weight:600;display:block}
+.node .ns{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.node.on{border-color:var(--dr);box-shadow:0 0 0 1px var(--dr) inset;background:var(--surface);color:var(--text)}
+.link{flex:none;align-self:center;color:var(--muted);font-family:var(--mono);padding:0 6px}
+@media (max-width:760px){.arch{flex-direction:column}.link{transform:rotate(90deg);padding:2px 0}.node{min-width:0}}
+#archDetail{margin-top:14px;min-height:120px}
+#archDetail ul{margin:.4em 0;padding-left:1.2em}
+
+/* ---------- charts ---------- */
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.chart-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.chart-title{font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--text-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .sw{width:14px;height:3px;border-radius:2px;display:inline-block}
+svg text{font-family:var(--font)}
+.axis text{fill:var(--muted);font-size:11px}
+.axis line,.axis path{stroke:var(--grid)}
+.tip{position:fixed;pointer-events:none;z-index:100;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.8rem;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;transition:opacity .1s;max-width:260px;line-height:1.5}
+.tip .tr{display:flex;align-items:center;gap:6px;justify-content:space-between}
+.tip .tr span:first-child{display:inline-flex;align-items:center;gap:6px;color:var(--text-2)}
+.tip b{font-variant-numeric:tabular-nums}
+.ws-compare{display:flex;align-items:flex-end;gap:24px;margin-top:12px;flex-wrap:wrap}
+.ws-compare input{width:100%}
+.boxes{display:flex;align-items:flex-end;gap:18px;height:170px}
+.box{border:1px solid var(--neutral);background:color-mix(in srgb,var(--neutral) 18%,transparent);border-radius:4px;transition:all .3s;position:relative}
+.box.ws{border-color:var(--dr);background:color-mix(in srgb,var(--dr) 35%,transparent)}
+.box-lab{font-size:.75rem;color:var(--text-2);text-align:center;margin-top:4px;font-family:var(--mono)}
+
+/* waffle */
+.waffle{display:grid;grid-template-columns:repeat(7,22px);gap:4px}
+.waffle i{width:22px;height:22px;border-radius:4px;background:var(--neutral-2);display:block}
+.waffle i.ok{background:var(--dr)}
+.reset-flow{display:flex;flex-direction:column;gap:6px;font-size:.88rem}
+.rf{border:1px solid var(--border);border-radius:6px;padding:8px 10px;background:var(--surface-2)}
+.rf.q{border-style:dashed}
+.rf-arr{color:var(--muted);text-align:center;font-family:var(--mono);line-height:1}
+
+/* stacked */
+.stack{display:flex;height:26px;gap:2px;border-radius:4px;overflow:hidden;margin:4px 0 2px}
+.stack div{height:100%;display:flex;align-items:center;justify-content:center;font-size:.72rem;color:#fff;font-family:var(--mono);overflow:hidden;white-space:nowrap}
+
+/* ablation */
+.abl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+@media (max-width:820px){.abl{grid-template-columns:minmax(0,1fr)}}
+.abl label{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;margin-bottom:6px;font-size:.9rem}
+.abl label:has(input:checked){border-color:var(--dr)}
+.abl label small{display:block;color:var(--muted);font-size:.78rem}
+.abl input{margin-top:5px;accent-color:var(--dr)}
+.big{font-size:3.2rem;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.delta{font-family:var(--mono);font-size:1rem}
+.hbar{height:14px;background:var(--surface-2);border-radius:4px;overflow:hidden;margin:12px 0 4px}
+.hbar div{height:100%;background:var(--dr);border-radius:0 4px 4px 0;transition:width .4s}
+.hbar div.bad{background:var(--raw)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:12px;overflow-x:auto}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--text-2);padding:.5em .8em;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--dr)}
+.panel[hidden]{display:none}
+.check{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);font-size:.92rem}
+.check input{margin-top:6px;accent-color:var(--dr)}
+.check:has(input:checked) span{color:var(--muted);text-decoration:line-through}
+.tree{font-family:var(--mono);font-size:.8rem;line-height:1.6}
+
+ul.tight{padding-left:1.2em;margin:.4em 0} ul.tight li{margin:.2em 0}
+footer{padding:40px 0 60px;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+.theme-btn{flex:none;font-size:.8rem;padding:.3em .6em}
+.mt{margin-top:16px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+details summary{cursor:pointer;color:var(--text-2);font-size:.85rem;margin-top:8px}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <span class="brand">DR-DCI</span>
+    <nav class="toc" id="toc" aria-label="섹션">
+      <a href="#problem">문제</a><a href="#dci">DCI 입문</a><a href="#pull">pull 루프</a><a href="#arch">아키텍처</a><a href="#reset">컨텍스트 리셋</a><a href="#results">메인 결과</a><a href="#scaling">스케일링</a><a href="#wiki">Wiki-18</a><a href="#ablation">어블레이션</a><a href="#related">관련 연구</a><a href="#guide">재현 가이드</a><a href="#limits">한계·인용</a>
+    </nav>
+    <button class="theme-btn" id="themeBtn" aria-label="테마 전환">☀︎ / ☾</button>
+  </div>
+  <div id="progress"></div>
+</header>
+
+<!-- S0 HERO -->
+<section class="hero" id="top">
+  <canvas id="corpus" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="btn-row" style="margin-top:0">
+      <span class="pill">arXiv 2606.14885 · cs.AI, cs.CL</span>
+      <span class="pill"><span class="dot" style="background:var(--warn-ink)"></span>arXiv preprint · 학회 채택 미확인</span>
+    </div>
+    <h1>1,000만 문서에서 grep하지 마세요.<br>먼저 끌어오세요.</h1>
+    <p class="sub">DR-DCI(arXiv 표기 “Dr-DCI”): <i>Scaling Direct Corpus Interaction via Dynamic Workspace Expansion</i>. 검색을 에이전트가 직접 호출하는 <code>pull(query, topK)</code> 액션으로 바꾸고, 끌어온 워크스페이스 안에서만 <code>rg</code>·<code>grep</code>·<code>read</code>로 증거를 찾고 검증합니다. 별도 학습 없이 GPT-5.4 nano로 추론만 합니다.</p>
+    <p class="authors">Yi Lu*†, Zhuofeng Li*, Ping Nie†, Haoxiang Zhang, Yuyu Zhang, Kai Zou, Wenhu Chen, Jimmy Lin, Dongfu Jiang⊠, Yu Zhang⊠ — University of Toronto · Texas A&amp;M · University of Waterloo · UC San Diego · Verdent AI · Netmind AI<br>(*공동 1저자, †프로젝트 리드, ⊠교신저자)</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="v" data-count="71.2" data-suffix="%">71.2%</div><div class="k">BrowseComp-Plus 830문항 정확도 · Raw-DCI 62.9% 대비 +8.3pt <span class="src">Table 1</span></div></div>
+      <div class="stat"><div class="v">146<span style="font-size:1rem;font-weight:500">s</span> <span style="font-size:1rem;color:var(--muted);font-weight:500">vs 3139s</span></div><div class="k">문항당 평균 벽시계 시간 · 21.5배 단축 <span class="src">Table 1</span></div></div>
+      <div class="stat"><div class="v">70<span style="font-size:1rem;font-weight:500">/100</span></div><div class="k">10M 문서 코퍼스(100배)에서의 정확도 · 100K에선 80/100 <span class="src">Table 12</span></div></div>
+    </div>
+    <div class="btn-row">
+      <a class="btn" href="https://arxiv.org/abs/2606.14885" target="_blank" rel="noopener">arXiv 논문 ↗</a>
+      <a class="btn" href="https://github.com/EigenTom/DR-DCI" target="_blank" rel="noopener">GitHub (MIT) ↗</a>
+      <a class="btn" href="https://huggingface.co/papers/2606.14885" target="_blank" rel="noopener">HF Papers ↗</a>
+    </div>
+    <p class="muted" style="margin-top:22px;font-size:.92rem">“Retrieval should not replace interaction — it should steer it.” — 검색은 상호작용을 대체하지 말고, 상호작용을 조종해야 한다. <span class="src">HF 저자 코멘트</span></p>
+  </div>
+</section>
+
+<!-- S1 PROBLEM -->
+<section id="problem"><div class="wrap">
+  <div class="eyebrow">01 · 문제</div>
+  <h2>스케일과 정밀도의 긴장</h2>
+  <p class="lede">RAG는 확장되지만 해상도가 낮고, Raw DCI는 정밀하지만 확장되지 않습니다. 논문은 DCI의 병목을 “로컬 정밀도”가 아니라 <b>코퍼스 수준 탐색을 위한 확장 가능한 메커니즘의 부재</b>로 진단합니다. 그래서 검색에는 확장성을, 셸 상호작용에는 정밀도를 맡깁니다.</p>
+  <div class="grid g3 mt">
+    <div class="card col">
+      <h3>RAG / 검색 에이전트</h3>
+      <div class="flow">query <span class="arr">→</span> retriever<br><span class="arr">→</span> top-k 스니펫 <span class="arr">→</span> LLM</div>
+      <div class="gauge"><div class="lab"><span>확장성</span><span>높음</span></div><div class="bar"><div class="fill" style="width:90%"></div></div></div>
+      <div class="gauge"><div class="lab"><span>상호작용 해상도</span><span>낮음</span></div><div class="bar"><div class="fill" style="width:25%"></div></div></div>
+      <p class="t2" style="font-size:.88rem">증거가 순위 목록·스니펫·제한된 문서 뷰로만 보입니다. 문서를 가로지르는 임의 제약 검색이나 재조직이 어렵습니다.</p>
+    </div>
+    <div class="card col">
+      <h3>Raw DCI</h3>
+      <div class="flow">LLM <span class="arr">→</span> rg / grep / read<br><span class="arr">→</span> 전체 원시 코퍼스</div>
+      <div class="gauge"><div class="lab"><span>확장성</span><span>낮음</span></div><div class="bar"><div class="fill" style="width:22%"></div></div></div>
+      <div class="gauge"><div class="lab"><span>상호작용 해상도</span><span>높음</span></div><div class="bar"><div class="fill" style="width:92%"></div></div></div>
+      <p class="t2" style="font-size:.88rem">100K→200K 문서에서 DCI-Agent-CC 도구 호출이 <b>38.5→86.9회</b>로 늘었습니다. Raw-DCI 단일 도구 실행 최대 <b>24,418초</b>. <span class="src">DCI RQ4 · Table 10</span></p>
+    </div>
+    <div class="card col dr">
+      <h3>DR-DCI</h3>
+      <div class="flow">LLM <span class="arr">→</span> <b style="color:var(--accent-ink)">pull(q, k)</b> <span class="arr">→</span> 워크스페이스<br><span class="arr">→</span> rg / grep / read</div>
+      <div class="gauge"><div class="lab"><span>확장성</span><span>높음</span></div><div class="bar"><div class="fill" style="width:85%;background:var(--dr)"></div></div></div>
+      <div class="gauge"><div class="lab"><span>상호작용 해상도</span><span>높음</span></div><div class="bar"><div class="fill" style="width:88%;background:var(--dr)"></div></div></div>
+      <p class="t2" style="font-size:.88rem">검색은 넓게(후보 발견), grep은 좁게(검증). 비싼 터미널 연산을 경계가 있는 워크스페이스(약 1K–1.4K 문서)로 몰아넣습니다.</p>
+    </div>
+  </div>
+  <p class="muted" style="font-size:.8rem;margin-top:10px">게이지는 개념 비교용 정성 표현입니다(측정값 아님).</p>
+  <h3>Raw DCI가 대규모 코퍼스에서 실패하는 방식 — “추론 실패가 아니라 운영 실패”</h3>
+  <div class="grid g3">
+    <div class="card"><b>30초 도구 타임아웃</b><p class="t2" style="font-size:.88rem;margin:.3em 0 0">코퍼스 전체에 대한 <code>rg</code>가 제한 시간 안에 끝나지 않습니다. 800K 문서에서 도구 오류율 54.7%. <span class="src">Table 13</span></p></div>
+    <div class="card"><b>과도한 무관 출력</b><p class="t2" style="font-size:.88rem;margin:.3em 0 0">넓은 패턴은 수천 줄의 매치를 쏟아내 컨텍스트를 잠식합니다.</p></div>
+    <div class="card"><b>넓게 vs 좁게의 딜레마</b><p class="t2" style="font-size:.88rem;margin:.3em 0 0">넓은 검색은 비싸고, 좁은 검색은 전역 단서 없이 증거를 놓칩니다.</p></div>
+  </div>
+</div></section>
+
+<!-- S2 DCI -->
+<section id="dci"><div class="wrap">
+  <div class="eyebrow">02 · 선행 연구</div>
+  <h2>DCI 입문: 임베딩 없이, 인덱스 없이, 터미널만으로</h2>
+  <div class="grid g2">
+    <div>
+      <p>DCI(Direct Corpus Interaction)는 같은 그룹의 선행 논문 <i>Beyond Semantic Similarity</i>(arXiv 2605.05242)에서 정식화됐습니다. 정의는 “에이전트가 임베딩 모델, 벡터 인덱스, 검색 API를 우회하고 범용 명령줄 인터페이스로 원시 코퍼스와 상호작용하는 것”입니다.</p>
+      <p>핵심 개념은 <b>retrieval interface resolution</b> — 문서나 패시지보다 작고 정밀한 단위로 조작할 수 있는 능력입니다. <code>grep 'A' | grep 'B'</code> 한 줄이 “A와 B를 동시에 만족하는 문장”이라는, 임베딩 검색으로는 표현하기 어려운 질의가 됩니다.</p>
+      <ul class="tight">
+        <li>Claude Sonnet 4.6 백본에서 Qwen3-Embedding-8B 검색 도구를 DCI로 바꾸자 BrowseComp-Plus <b>69.0% → 80.0%</b>, 비용 $1,440 → $1,016. <span class="src">DCI 논문</span></li>
+        <li>최소 하네스 DCI-Agent-Lite(Pi 기반, bash+read, GPT-5.4 nano): <b>62.9%</b>. 이것이 DR-DCI의 “Raw-DCI” 기준선입니다.</li>
+        <li>동시기 연구: GrepSeek(arXiv 2605.29307, SFT→GRPO 학습), “Is Grep All You Need?”(arXiv 2605.15184, 하네스 설계가 grep 대 벡터 선택만큼 중요).</li>
+      </ul>
+    </div>
+    <div>
+      <div class="term">
+        <div class="term-head"><span class="dot" style="background:var(--raw)"></span><span class="dot" style="background:var(--warn-ink)"></span><span class="dot" style="background:var(--dr)"></span><span class="sp">workspace — 예시 트레이스</span><button id="termPlay" style="font-size:.72rem;padding:.15em .6em">▶ 재생</button></div>
+        <div class="term-body" id="termBody" aria-live="polite"></div>
+      </div>
+      <p class="muted" style="font-size:.78rem;margin-top:6px">설명용 재구성 트레이스입니다. pull 응답 블록은 논문 부록 A.7 원문이며, <code>rg</code>/<code>read</code> 명령과 출력은 흐름을 보여주기 위한 예시입니다. 실제 셸은 실행되지 않습니다.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- S3 PULL -->
+<section id="pull"><div class="wrap">
+  <div class="eyebrow">03 · 핵심 아이디어</div>
+  <h2>pull = 워크스페이스 확장 액션</h2>
+  <p class="lede">숨김 코퍼스 C = {d₁,…,d<sub>N</sub>}에서 에이전트는 질문별 워크스페이스 W<sub>t</sub> ⊆ C를 유지하고, 매 턴 <b>확장(expand)</b> · <b>조사(investigate)</b> · <b>종료(finalize)</b> 중 하나를 고릅니다. 아래는 부록의 성공 사례(QID 665) 수치로 재생한 루프입니다.</p>
+  <div class="stepper mt">
+    <div>
+      <canvas id="wsCanvas" role="img" aria-label="숨김 코퍼스에서 워크스페이스로 문서를 끌어오는 애니메이션"></canvas>
+      <div class="ws-stats">
+        <span>visible <b id="wsTotal">0</b></span>
+        <span>new <b id="wsNew" style="color:var(--accent-ink)">0</b></span>
+        <span>already visible <b id="wsDup">0</b></span>
+        <span>pull 호출 <b id="wsPulls">0</b></span>
+      </div>
+      <div class="btn-row mt">
+        <button id="stPrev">← 이전</button><button id="stNext">다음 →</button><button id="stAuto">▶ 자동 재생</button>
+      </div>
+      <p class="muted" style="font-size:.78rem;margin-top:8px">점 하나 ≈ 문서 5개. 회색 = 숨김 코퍼스, 청록 = 워크스페이스에 물질화된 문서, 흰 테두리 = 현재 도구가 건드리는 문서. pull 문서 수는 QID 665 사례 값이며, rg 매치 수·read 구간은 설명용입니다.</p>
+    </div>
+    <ol class="steps" id="steps"></ol>
+  </div>
+
+  <h3>pull 인터페이스</h3>
+  <div class="formula" role="math" aria-label="Delta W t, P t, S t equals PULL of r t, k t given C and W t; W t plus 1 equals W t union Delta W t; Delta W t intersect W t is empty">
+    (Δ<i>W<sub>t</sub></i>, <i>P<sub>t</sub></i>, <i>S<sub>t</sub></i>) = PULL(<i>r<sub>t</sub></i>, <i>k<sub>t</sub></i>; <i>C</i>, <i>W<sub>t</sub></i>), &nbsp;&nbsp; <i>W</i><sub><i>t</i>+1</sub> = <i>W<sub>t</sub></i> ∪ Δ<i>W<sub>t</sub></i>, &nbsp;&nbsp; Δ<i>W<sub>t</sub></i> ∩ <i>W<sub>t</sub></i> = ∅
+  </div>
+  <div class="grid g2 mt">
+    <div>
+      <p>하네스가 검색 · 중복 제거 · <b>물질화(materialize, 워크스페이스에 실제 파일로 배치)</b>를 처리합니다. 반환값은 세 가지입니다.</p>
+      <ul class="tight">
+        <li><b>ΔW<sub>t</sub></b>: 새로 추가된 문서(이미 보이는 문서는 제외)</li>
+        <li><b>P<sub>t</sub></b>: 간결한 순위 프리뷰 — “탐색 신호”일 뿐, 답의 근거가 아님</li>
+        <li><b>S<sub>t</sub></b>: 워크스페이스 통계(신규 / 기존 / 전체)</li>
+      </ul>
+      <p>프롬프트는 topK를 <b>300–600</b> 사이에서 고르게 하고, “pull 직후에는 반드시 워크스페이스를 먼저 검색·읽기하고, 진짜 새 단서가 있을 때만 다시 pull하라”고 지시합니다.</p>
+    </div>
+    <div class="codebox">
+      <button class="copy" data-copy="pullResp">복사</button>
+<pre id="pullResp">Workspace expanded.
+New documents added: 384
+Already visible from previous pulls: 116
+Total visible documents: 1072
+Top ranked new documents:
+1. aza_japanese_spider_crab_care_manual.pdf.txt
+2. public_aquarium_husbandry_guidelines.txt
+...
+Next step: search/read the visible workspace. Use another pull only for a new clue or missing evidence.</pre>
+      <p class="muted" style="font-size:.78rem;margin-top:6px">실제 pull 응답 예시 <span class="src">Appendix A.7</span></p>
+    </div>
+  </div>
+  <h3>워크스페이스 DCI의 두 패턴</h3>
+  <div class="grid g2">
+    <div class="card"><b>문서 간(inter-document) DCI</b><p class="t2" style="font-size:.9rem;margin:.3em 0 0"><code>rg</code>, <code>grep</code>, <code>find</code>, <code>ls</code>로 여러 후보를 가로질러 제약을 조합하고, 브리지 엔티티를 추적하고, 오답 후보를 배제합니다. 이걸 막으면 정확도가 82→40으로 반토막 납니다(→ 어블레이션).</p></div>
+    <div class="card"><b>문서 내(intra-document) DCI</b><p class="t2" style="font-size:.9rem;margin:.3em 0 0"><code>read</code>에 줄 오프셋이나 문자 윈도우를 주어 정확한 증거 구간을 찾습니다. 출력이 잘리면 하네스가 <code>offset</code>/<code>charOffset</code> 이어읽기 힌트를 줍니다.</p></div>
+  </div>
+</div></section>
+
+<!-- S4 ARCH -->
+<section id="arch"><div class="wrap">
+  <div class="eyebrow">04 · 아키텍처</div>
+  <h2>터미널 친화 워크스페이스</h2>
+  <p class="lede">성능의 상당 부분은 모델이 아니라 인터페이스 엔지니어링에서 나옵니다. 노드를 눌러 각 계층의 설계 디테일을 보세요. <span class="src">Appendix A.8</span></p>
+  <div class="arch mt" id="archNodes" role="tablist" aria-label="아키텍처 계층"></div>
+  <div class="card" id="archDetail" aria-live="polite"></div>
+  <h3>의사코드: pull()</h3>
+  <div class="codebox">
+    <button class="copy" data-copy="pseudo">복사</button>
+<pre id="pseudo"># 의사코드 — 논문 설명을 바탕으로 한 개념 구현이며 저장소의 실제 코드가 아님
+def pull(query: str, top_k: int, ws: Workspace) -> str:
+    assert 300 &lt;= top_k &lt;= 600                      # 프롬프트 권장 범위
+    hits = retriever.search(query, k=top_k)         # dense(Qwen3-Emb-8B) 또는 BM25, :8002/retrieve
+    new  = [h for h in hits if h.doc_id not in ws.ids]   # ΔW ∩ W = ∅  (중복 제거)
+    for h in new:
+        name = shell_safe(h.title)                  # 셸 안전 파일명, 원제목/URL/순위/출처는 메타데이터로
+        os.link(store.path(h.doc_id), ws.root / name)    # 하드링크 물질화, root-flat(폴더 없음)
+        if is_single_line(ws.root / name):
+            reflow(ws.root / name, width=1200)      # OCR/PDF 한 줄 문서 리플로
+        ws.add(h.doc_id, meta=h.meta)
+    return render_preview(                          # P_t, S_t — 순위는 경로가 아니라 응답으로 전달
+        new=len(new), dup=len(hits) - len(new), total=len(ws),
+        top=[n.name for n in new[:20]],
+        hint="search/read the visible workspace before pulling again")</pre>
+  </div>
+</div></section>
+
+<!-- S5 RESET -->
+<section id="reset"><div class="wrap">
+  <div class="eyebrow">05 · 컨텍스트 리셋</div>
+  <h2>워크스페이스는 컨텍스트가 아니라 상태다</h2>
+  <p class="lede">검색 상태(W<sub>t</sub>)와 추론 컨텍스트(h<sub>t</sub>)를 분리합니다. 에이전트가 막히면 h<sub>t</sub>를 버리고, W<sub>t</sub>만 가진 새 Raw-DCI 에이전트가 다시 답합니다.</p>
+  <div class="grid g2 mt">
+    <div class="card">
+      <div class="reset-flow">
+        <div class="rf">DR-DCI 에이전트가 답 제출 (W<sub>t</sub>, h<sub>t</sub>)</div>
+        <div class="rf-arr">↓</div>
+        <div class="rf q"><b>트리거?</b> 최종 신뢰도 ≤ 70 <b>그리고</b> 기권 또는 증거 부족을 명시</div>
+        <div class="rf-arr">↓ 예 (830문항 중 49건)</div>
+        <div class="rf">h<sub>t</sub> 폐기 · W<sub>t</sub> 보존</div>
+        <div class="rf-arr">↓</div>
+        <div class="rf" style="border-color:var(--dr)">새 Raw-DCI 에이전트가 보존된 워크스페이스에서 재답변</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chart-title">트리거된 49건의 결과</div>
+      <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-top:10px">
+        <div class="waffle" id="waffle" role="img" aria-label="49건 중 17건 회복"></div>
+        <div>
+          <div class="legend" style="flex-direction:column;gap:6px">
+            <span><span class="dot" style="background:var(--dr);border-radius:3px"></span>리셋 후 정답 17건</span>
+            <span><span class="dot" style="background:var(--neutral-2);border-radius:3px"></span>여전히 오답 32건</span>
+          </div>
+          <p class="t2" style="font-size:.88rem">리셋 전 이 49건의 정답은 <b>0개</b>였습니다.<br>전체: 591/830 → <b>608/830</b> (71.20% → 73.25%)<br>추가 비용 총 <b>$4.44</b> <span class="src">§ Context reset</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- S6 RESULTS -->
+<section id="results"><div class="wrap">
+  <div class="eyebrow">06 · 메인 결과</div>
+  <h2>BrowseComp-Plus 830문항</h2>
+  <p class="lede">코퍼스 100,195문서, 문항당 평균 증거 문서 6.1개 · 정답 문서 2.9개. 효율 개선 폭이 정확도 개선보다 더 극적입니다. 헤더를 눌러 정렬할 수 있습니다.</p>
+  <div class="card mt tscroll">
+    <table id="t1">
+      <thead><tr><th data-k="name">방법</th><th data-k="acc">정확도</th><th data-k="tools">평균 도구</th><th data-k="turns">평균 턴</th><th data-k="wall">평균 벽시계</th><th data-k="cost">비용<sup>*</sup></th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <p class="muted" style="font-size:.78rem;margin:10px 0 0"><span class="src">Table 1</span> <sup>*</sup>DCI 원논문 4.2절은 같은 DCI-Agent-Lite(GPT-5.4 nano)의 비용을 “$93”으로 보고하지만, DR-DCI 표 1은 $88.13로 적습니다. 여기서는 DR-DCI 표 1 값을 씁니다.</p>
+  </div>
+  <div class="chart-card mt">
+    <div class="chart-head"><span class="chart-title">문항당 평균 벽시계 시간 (초)</span><span class="src">Table 1</span></div>
+    <div id="wallChart"></div>
+  </div>
+</div></section>
+
+<!-- S7 SCALING -->
+<section id="scaling"><div class="wrap">
+  <div class="eyebrow">07 · 스케일링</div>
+  <h2>코퍼스는 100배, 워크스페이스는 그대로</h2>
+  <p class="lede">BCP-100(고정 시드 100문항)에 FineWeb 방해 문서를 섞어 코퍼스를 100K → 10M으로 키웠습니다. DR-DCI는 80 → 70으로 완만하게 떨어지고, Raw-DCI는 400K부터 무너집니다.</p>
+  <div class="chart-card mt">
+    <div class="chart-head">
+      <div class="btn-row" id="metricBtns" role="group" aria-label="지표 선택">
+        <button aria-pressed="true" data-m="acc">정확도</button>
+        <button aria-pressed="false" data-m="err">도구 오류율</button>
+        <button aria-pressed="false" data-m="cost">비용</button>
+      </div>
+      <div class="legend" id="scaleLegend"></div>
+    </div>
+    <div id="scaleChart"></div>
+    <p class="muted" style="font-size:.78rem;margin:6px 0 0" id="scaleNote"></p>
+    <details><summary>데이터 표 보기</summary><div class="tscroll" id="scaleTable"></div></details>
+  </div>
+  <div class="chart-card mt">
+    <div class="chart-head"><span class="chart-title">코퍼스 크기 vs DR-DCI 워크스페이스 크기</span><span class="src">§ 4.3</span></div>
+    <div class="ws-compare">
+      <div style="flex:1;min-width:220px">
+        <label for="corpusSlider" class="t2" style="font-size:.88rem">코퍼스 크기: <b id="corpusLab" class="mono">100K</b></label>
+        <input type="range" id="corpusSlider" min="0" max="4" step="1" value="0">
+        <p class="t2" style="font-size:.88rem">워크스페이스는 실험 전 구간에서 약 <b>1K–1.4K 문서</b>로 제한된 채 유지됐습니다. 코퍼스 대비 비율: <b id="ratioLab" class="mono"></b></p>
+        <p class="muted" style="font-size:.78rem">상자 면적이 문서 수에 비례합니다(코퍼스 상자 크기 고정). 코퍼스가 커질수록 워크스페이스는 상대적으로 점이 됩니다.</p>
+      </div>
+      <div>
+        <div class="boxes">
+          <div><div class="box" id="boxCorpus"></div><div class="box-lab">숨김 코퍼스</div></div>
+          <div><div class="box ws" id="boxWs"></div><div class="box-lab">워크스페이스</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note mt"><b>해석 주의.</b> 방해 문서가 무작위 FineWeb이라 정답과 비슷한 “어려운 오답”보다 쉬울 수 있습니다. 100문항 표본이라 1–3점 차이는 통계적으로 의미가 약할 수 있습니다. BM25 기준선은 공식 BrowseComp-Plus 설정(결과당 512토큰으로 자른 top-5 스니펫)입니다.</div>
+</div></section>
+
+<!-- S8 WIKI -->
+<section id="wiki"><div class="wrap">
+  <div class="eyebrow">08 · 일반화</div>
+  <h2>Wiki-18: 2,000만 개의 짧은 문서</h2>
+  <p class="lede">파일 하나당 문서 하나로 구성한 20M 코퍼스에서 6개 QA 벤치마크(분할당 50문항)를 풀었습니다. 평균 63.0으로 가장 강한 기준선 ASearcher-Local-14B(52.33)를 앞섭니다.</p>
+  <div class="chart-card mt">
+    <div class="chart-head"><span class="chart-title">데이터셋별 정확도</span>
+      <div class="legend"><span><span class="dot" style="background:var(--dr)"></span>DR-DCI (GPT-5.4 nano)</span><span><span class="dot" style="background:transparent;border:2px solid var(--neutral)"></span>기준선 3종 (호버로 이름 확인)</span></div>
+    </div>
+    <div id="wikiChart"></div>
+    <details><summary>데이터 표 보기</summary><div class="tscroll" id="wikiTable"></div></details>
+  </div>
+  <div class="grid g2 mt" style="align-items:start">
+    <div class="card">
+      <div class="chart-title">난이도에 맞춰 pull을 조절</div>
+      <p class="t2" style="font-size:.9rem">에이전트는 쉬운 단일 홉 과제에서는 적게, 멀티 홉 과제에서는 많이 끌어왔습니다. 문항당 평균 비용 $0.57.</p>
+      <table>
+        <thead><tr><th>데이터셋</th><th>평균 pull</th><th>평균 워크스페이스 문서</th></tr></thead>
+        <tbody><tr><td>NQ (단일 홉)</td><td>1.72회</td><td>~572</td></tr><tr><td>MuSiQue (멀티 홉)</td><td>3.20회</td><td>~1,101</td></tr></tbody>
+      </table>
+    </div>
+    <div class="note"><b>통제 비교가 아닙니다(논문 명시).</b> DR-DCI는 상용 GPT-5.4 nano를, 기준선은 7–32B 오픈 모델을 쓰며 학습법·환경 가정도 다릅니다. 그 밖의 기준선: Verl-Tool-Search-7B-DAPO 37.67, ZeroSearch-7B 17.67. <span class="src">Table 2</span></div>
+  </div>
+</div></section>
+
+<!-- S9 ABLATION -->
+<section id="ablation"><div class="wrap">
+  <div class="eyebrow">09 · 어블레이션</div>
+  <h2>무엇이 실제로 효과를 내나</h2>
+  <p class="lede">전체 구성(82/100)에서 부품 하나를 바꿨을 때의 실측값입니다. 측정된 단일 변경만 고를 수 있습니다(BCP-100, GPT-5.4 nano).</p>
+  <div class="abl mt">
+    <div id="ablOpts" role="radiogroup" aria-label="어블레이션 구성"></div>
+    <div class="card" style="position:sticky;top:70px;align-self:start">
+      <div class="t2" style="font-size:.85rem">정확도 (BCP-100)</div>
+      <div style="display:flex;align-items:baseline;gap:12px"><span class="big" id="ablVal">82</span><span class="muted">/100</span><span class="delta" id="ablDelta"></span></div>
+      <div class="hbar"><div id="ablBar" style="width:82%"></div></div>
+      <p id="ablNote" class="t2" style="font-size:.9rem;min-height:4.5em"></p>
+    </div>
+  </div>
+  <div class="grid g2 mt">
+    <div class="chart-card">
+      <div class="chart-head"><span class="chart-title">리트리버 백엔드</span><span class="src">Ablation</span></div>
+      <div class="tscroll"><table>
+        <thead><tr><th>구성</th><th>정확도</th><th>실행 시간</th><th>비용</th></tr></thead>
+        <tbody>
+          <tr class="hl"><td>DR-DCI + Dense (Qwen3-Emb-8B)</td><td>82/100</td><td>117.15s</td><td>$4.03</td></tr>
+          <tr><td>DR-DCI + BM25</td><td>80/100</td><td>301.62s</td><td>$5.17</td></tr>
+          <tr><td>Raw-DCI</td><td>67/100</td><td>968.52s</td><td>$11.72</td></tr>
+          <tr><td>OpenResearcher (dense 검색 에이전트)</td><td>31/100</td><td>–</td><td>–</td></tr>
+        </tbody>
+      </table></div>
+      <p class="t2" style="font-size:.86rem">BM25만으로도 80/100. 임베딩 인프라가 없으면 BM25로 시작할 수 있지만 실행 시간은 dense 대비 약 2.6배입니다.</p>
+    </div>
+    <div class="chart-card">
+      <div class="chart-head"><span class="chart-title">도구 호출 구성</span><span class="src">Table 10</span></div>
+      <div id="toolMix"></div>
+      <p class="t2" style="font-size:.86rem">rg는 어느 설정에서든 bash 호출의 약 89–96%를 차지합니다. 차이는 “로컬 검색을 하느냐”가 아니라 <b>“코퍼스 수준 탐색을 어디서 하느냐”</b>입니다.</p>
+    </div>
+  </div>
+  <div class="note mt"><b>리콜 ≠ 정확도.</b> 순위별 폴더 구조는 워크스페이스 리콜이 가장 높았지만(Gold R@W 0.8541) 정확도는 75/100에 그쳤고, 평평한 root-flat 구조(Gold R@W 0.8033)가 82/100으로 가장 좋았습니다. 인터페이스 설계가 곧 성능 변수입니다.</div>
+</div></section>
+
+<!-- S10 RELATED -->
+<section id="related"><div class="wrap">
+  <div class="eyebrow">10 · 관련 연구</div>
+  <h2>에이전트 검색 인터페이스 설계 지도</h2>
+  <p class="lede">DR-DCI는 유일한 혁신이 아니라 같은 아이디어 축 위의 한 지점입니다. 후속 RARG 논문은 “Pi-Serini, RISE, and DR-DCI … use sparse or dense retrieval to construct or expand a bounded candidate space”라고 정리합니다.</p>
+  <div class="chart-card mt">
+    <div class="chart-head"><span class="chart-title">검색의 역할 × 상호작용 해상도</span>
+      <div class="legend"><span><span class="dot" style="background:var(--dr)"></span>DR-DCI</span><span><span class="dot" style="background:var(--neutral)"></span>다른 접근</span></div></div>
+    <div id="mapChart"></div>
+    <p class="muted" style="font-size:.78rem;margin:6px 0 0">위치는 이 페이지의 정성적 배치이며 저자 주장이나 측정값이 아닙니다. 툴팁의 수치는 백본과 문항 집합이 서로 달라 <b>직접 비교할 수 없습니다</b>.</p>
+  </div>
+  <div class="card mt tscroll">
+    <table>
+      <thead><tr><th>접근</th><th style="text-align:left">검색의 역할</th><th style="text-align:left">상호작용</th><th style="text-align:left">대표 수치 (비교 불가)</th></tr></thead>
+      <tbody id="relTable"></tbody>
+    </table>
+  </div>
+  <p class="t2" style="font-size:.88rem;margin-top:10px">롱 컨텍스트 모델과의 직접 비교는 논문에 없습니다. 개념적으로 DR-DCI는 문서를 컨텍스트에 넣는 대신 파일시스템에 두고 필요한 구간만 읽으며, 컨텍스트 압박은 L3 압축과 출력 절단으로 관리합니다.</p>
+</div></section>
+
+<!-- S11 GUIDE -->
+<section id="guide"><div class="wrap">
+  <div class="eyebrow">11 · 개발자 가이드</div>
+  <h2>재현과 적용</h2>
+  <p class="lede">README 기준 절차입니다. 저장소 README 스스로 “Links in this README are placeholders until the paper, project page, and artifacts are public”라고 밝히므로, 스크립트 이름은 최신 저장소에서 다시 확인하세요.</p>
+  <div class="card mt">
+    <div class="tabs" role="tablist" id="guideTabs">
+      <button role="tab" aria-selected="true" data-p="g1">1 · 설치</button>
+      <button role="tab" aria-selected="false" data-p="g2">2 · 코퍼스</button>
+      <button role="tab" aria-selected="false" data-p="g3">3 · 리트리버</button>
+      <button role="tab" aria-selected="false" data-p="g4">4 · 실행</button>
+      <button role="tab" aria-selected="false" data-p="g5">5 · 요약</button>
+    </div>
+    <div class="panel" id="g1"><div class="codebox"><button class="copy" data-copy="c1">복사</button><pre id="c1">git clone https://github.com/EigenTom/DR-DCI && cd DR-DCI
+bash setup.sh
+# 수동 설치:
+#   uv sync
+#   (cd pi-mono && npm install && npm run build)
+
+# .env
+OPENAI_API_KEY=...        # 또는 ANTHROPIC_API_KEY=...</pre></div></div>
+    <div class="panel" id="g2" hidden><div class="codebox"><button class="copy" data-copy="c2">복사</button><pre id="c2">python scripts/download_corpus.py
+python scripts/download_dci_bench.py
+python scripts/bcplus_eval/extract_bcplus_qa.py</pre></div></div>
+    <div class="panel" id="g3" hidden><div class="codebox"><button class="copy" data-copy="c3">복사</button><pre id="c3">DR_DCI_QWEN3_INDEX_PATH="indexes/qwen3-embedding-8b/corpus.shard*_of_4.pkl" \
+  bash scripts/bcplus_eval/start_qwen3emb8b_retriever.sh
+# 기본 엔드포인트: http://127.0.0.1:8002/retrieve</pre></div>
+      <p class="muted" style="font-size:.8rem">Qwen3-Embedding-8B 인덱스를 직접 만드는 비용·시간은 논문에 보고되지 않았습니다(미확인).</p></div>
+    <div class="panel" id="g4" hidden><div class="codebox"><button class="copy" data-copy="c4">복사</button><pre id="c4"># 스모크 테스트 (1문항)
+BCP_LIMIT=1 bash scripts/bcplus_eval/run_full830_dynamic_pull_root_flat_openai_high_l3_300turn_parallel30.sh
+
+# 전체 830문항
+bash scripts/bcplus_eval/run_full830_dynamic_pull_root_flat_openai_high_l3_300turn_parallel30.sh</pre></div>
+      <p class="muted" style="font-size:.8rem">설정: GPT-5.4 nano(high reasoning), 메모리 관리 L3, 300턴 제한, 도구 타임아웃 30초, bash·read 병렬 실행.</p></div>
+    <div class="panel" id="g5" hidden><div class="codebox"><button class="copy" data-copy="c5">복사</button><pre id="c5">python scripts/bcplus_eval/summarize_bcplus_outputs.py \
+  --run-dir outputs/bcplus_eval/&lt;run_name&gt;</pre></div></div>
+  </div>
+  <div class="grid g2 mt">
+    <div class="card">
+      <div class="chart-title">코드 구조</div>
+<pre class="tree" style="margin-top:8px">DR-DCI/
+├─ pi-mono/packages/coding-agent/src/   # DCI/pull 도구가 들어간 Pi 에이전트 (TS)
+├─ scripts/
+│  ├─ bcplus_eval/                      # BrowseComp-Plus 하네스
+│  ├─ bright/  qa/  openresearcher/     # 기타 벤치마크
+├─ src/dci/benchmark/                   # Python CLI 래퍼
+└─ tools/dense_retriever/               # FAISS/Pyserini 리트리버 서비스</pre>
+      <table class="mt">
+        <thead><tr><th>환경변수</th><th style="text-align:left">기본값</th></tr></thead>
+        <tbody><tr><td><code>DR_DCI_RETRIEVER_PORT</code></td><td style="text-align:left"><code>8002</code></td></tr><tr><td><code>DCI_VIEW_CACHE_ROOT</code></td><td style="text-align:left"><code>/tmp/dci_views</code></td></tr></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="chart-title">프로덕션 적용 체크리스트 <span class="muted" style="font-weight:400;font-size:.8rem">(이 브라우저에만 저장)</span></div>
+      <div id="checklist"></div>
+    </div>
+  </div>
+  <div class="card mt">
+    <div class="chart-title">튜닝 노브</div>
+    <div class="tscroll"><table class="mt">
+      <thead><tr><th>노브</th><th style="text-align:left">논문 설정</th><th style="text-align:left">메모</th></tr></thead>
+      <tbody>
+        <tr><td>topK</td><td style="text-align:left">300–600 (에이전트 선택)</td><td style="text-align:left">고정 500 Single Pull은 79/100, 도구 60.33회</td></tr>
+        <tr><td>bash 출력 절단</td><td style="text-align:left">마지막 2000줄 / 10KB</td><td style="text-align:left">잘리면 offset·charOffset 이어읽기 힌트</td></tr>
+        <tr><td>리플로 폭</td><td style="text-align:left">1200자</td><td style="text-align:left">한 줄짜리 OCR/PDF 문서에만</td></tr>
+        <tr><td>도구 타임아웃</td><td style="text-align:left">30초</td><td style="text-align:left">Raw-DCI 실패의 주원인</td></tr>
+        <tr><td>컨텍스트 리셋</td><td style="text-align:left">신뢰도 ≤ 70 + 기권</td><td style="text-align:left">+2.05pt, 추가 $4.44</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</div></section>
+
+<!-- S12 LIMITS -->
+<section id="limits"><div class="wrap">
+  <div class="eyebrow">12 · 한계와 열린 질문</div>
+  <h2>한계, 향후 연구, 인용</h2>
+  <div class="grid g2">
+    <div>
+      <h3 style="margin-top:0">한계</h3>
+      <ul class="tight">
+        <li><b>리콜 성공 ≠ 판별 성공.</b> QID 221: 정답 문서가 워크스페이스에 들어왔지만 에이전트는 같은 저자의 다른 책을 골랐습니다. <span class="src">A.11.3</span></li>
+        <li><b>비교 공정성.</b> Wiki-18 기준선은 모델 크기·학습법·환경이 달라 통제 비교가 아닙니다.</li>
+        <li><b>표본 크기.</b> Wiki-18 분할당 50문항, 스케일링 100문항.</li>
+        <li><b>외삽.</b> Raw-DCI 800K 초과 구간(논문 그림 3)은 실측이 아닙니다.</li>
+        <li><b>방해 문서.</b> 무작위 FineWeb은 어려운 오답보다 쉬울 수 있습니다.</li>
+        <li><b>랭킹 과제.</b> BRIGHT/BEIR NDCG@10 평균 54.2로 ReasonRank-32B(47.0)보다 높지만 DCI-Agent-Lite(56.7)보다 낮습니다. <span class="src">A.3</span></li>
+        <li><b>상한.</b> 리트리버 품질(Dense &gt; BM25)과 LLM의 셸 조작 능력에 묶입니다.</li>
+        <li><b>단일 백본·자체 평가.</b> 모든 수치는 GPT-5.4 nano, 저자 자체 평가이며 독립 재현은 찾지 못했습니다.</li>
+      </ul>
+      <h3>향후 연구 <span class="src">§ 6</span></h3>
+      <ol class="tight">
+        <li>더 작은 오픈 에이전트를 Dynamic Pull에 맞게 학습</li>
+        <li>후보 수준 점수와 listwise/pairwise 목적함수를 쓰는 랭킹 지향 변형</li>
+        <li>웹 규모 확장 — 출처 발견, 최신성, 출처 신뢰성, 컨텍스트 관리</li>
+      </ol>
+    </div>
+    <div>
+      <div class="note">
+        <b>미확인 사항</b>
+        <ul class="tight">
+          <li><b>학회 채택:</b> Dongfu Jiang 홈페이지는 “accepted to EMNLP 2026”이라 밝히지만, 교신저자 Yu Zhang 홈페이지는 “Preprint”로 분류하고, GitHub BibTeX는 <code>journal={Manuscript}</code>이며, 공식 채택 목록에서도 확인되지 않았습니다. → 이 페이지는 “arXiv preprint”로만 표기합니다.</li>
+          <li><b>“DR”의 의미:</b> 논문·README·HF·저자 트윗 어디에도 정의가 없습니다. 일부 AI 요약의 확장형은 근거가 없어 쓰지 않습니다.</li>
+          <li><b>프로젝트 페이지:</b> 없음(README에 placeholder 명시).</li>
+          <li><b>스케일링 비용 단위:</b> 요약 자료에는 “문항당 약 $4–5”로 적혀 있으나, 표 1의 830문항 총비용 $34.91과 견주면 BCP-100 실행 총액으로 읽는 편이 자연스럽습니다. 원문 표에서 확인하세요.</li>
+        </ul>
+      </div>
+      <h3>BibTeX</h3>
+      <div class="codebox"><button class="copy" data-copy="bib">복사</button><pre id="bib">@article{lu2026drdci,
+  title   = {Dr-DCI: Scaling Direct Corpus Interaction via Dynamic Workspace Expansion},
+  author  = {Lu, Yi and Li, Zhuofeng and Nie, Ping and Zhang, Haoxiang and
+             Zhang, Yuyu and Zou, Kai and Chen, Wenhu and Lin, Jimmy and
+             Jiang, Dongfu and Zhang, Yu},
+  journal = {Manuscript},
+  note    = {arXiv:2606.14885},
+  year    = {2026}
+}</pre></div>
+      <p class="muted" style="font-size:.78rem">논문 정보로 재구성한 항목입니다. 인용 키 등은 저장소의 공식 BibTeX와 대조하세요.</p>
+    </div>
+  </div>
+  <h3>출처</h3>
+  <ul class="tight t2" style="font-size:.88rem">
+    <li>DR-DCI 논문: <a href="https://arxiv.org/abs/2606.14885" target="_blank" rel="noopener">arXiv 2606.14885</a> (CC BY 4.0) · 코드: <a href="https://github.com/EigenTom/DR-DCI" target="_blank" rel="noopener">EigenTom/DR-DCI</a> (MIT) · <a href="https://huggingface.co/papers/2606.14885" target="_blank" rel="noopener">HF Papers</a></li>
+    <li>선행 DCI: <a href="https://arxiv.org/abs/2605.05242" target="_blank" rel="noopener">arXiv 2605.05242</a> · <a href="https://github.com/DCI-Agent/DCI-Agent-Lite" target="_blank" rel="noopener">DCI-Agent-Lite</a></li>
+    <li>BrowseComp-Plus: <a href="https://arxiv.org/abs/2508.06600" target="_blank" rel="noopener">arXiv 2508.06600</a> · HF 데이터셋 Tevatron/browsecomp-plus</li>
+    <li>관련 연구: GrepSeek <a href="https://arxiv.org/abs/2605.29307" target="_blank" rel="noopener">2605.29307</a> · Is Grep All You Need? <a href="https://arxiv.org/abs/2605.15184" target="_blank" rel="noopener">2605.15184</a> · RISE <a href="https://arxiv.org/abs/2606.06880" target="_blank" rel="noopener">2606.06880</a> · RARG <a href="https://arxiv.org/abs/2607.24223" target="_blank" rel="noopener">2607.24223</a> · Fetch-then-Explore <a href="https://arxiv.org/abs/2608.02097" target="_blank" rel="noopener">2608.02097</a></li>
+  </ul>
+</div></section>
+
+<footer><div class="wrap">리서치 요약 문서를 바탕으로 만든 비공식 해설 페이지입니다. 모든 수치는 논문 표 번호와 함께 표기했으며, 저장소 지표 등은 조회 시점(2026-11) 기준으로 변동될 수 있습니다.</div></footer>
+
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script>
+(() => {
+"use strict";
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+};
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs={}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const redraws = [];
+
+/* ---------- theme ---------- */
+const savedTheme = store.get("drdci-theme");
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+$("#themeBtn").addEventListener("click", () => {
+  const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  const next = cur === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next; store.set("drdci-theme", next);
+  redraws.forEach(f => f());
+});
+
+/* ---------- tooltip ---------- */
+const tip = $("#tip");
+function showTip(html, x, y){
+  tip.innerHTML = html; tip.style.opacity = 1;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let left = x + 14, top = y + 14;
+  if (left + w > innerWidth - 8) left = x - w - 14;
+  if (top + h > innerHeight - 8) top = y - h - 14;
+  tip.style.left = Math.max(8, left) + "px"; tip.style.top = Math.max(8, top) + "px";
+}
+const hideTip = () => tip.style.opacity = 0;
+const row = (color, name, val, ring) => `<div class="tr"><span><span class="dot" style="${ring ? `border:2px solid ${color};background:transparent` : `background:${color}`}"></span>${name}</span><b>${val}</b></div>`;
+
+/* ---------- toc / progress ---------- */
+const tocLinks = $$("#toc a");
+const secs = tocLinks.map(a => $(a.getAttribute("href")));
+function onScroll(){
+  const h = document.documentElement;
+  $("#progress").style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + "%";
+  let idx = -1;
+  secs.forEach((s, i) => { if (s.getBoundingClientRect().top < 120) idx = i; });
+  tocLinks.forEach((a, i) => a.classList.toggle("active", i === idx));
+}
+addEventListener("scroll", onScroll, {passive:true}); onScroll();
+
+/* ---------- copy ---------- */
+$$(".copy").forEach(b => b.addEventListener("click", async () => {
+  const text = $("#" + b.dataset.copy).innerText;
+  try { await navigator.clipboard.writeText(text); }
+  catch(e){ const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select(); try{document.execCommand("copy");}catch(_){} t.remove(); }
+  const o = b.textContent; b.textContent = "복사됨"; setTimeout(() => b.textContent = o, 1200);
+}));
+
+/* ---------- hero corpus animation ---------- */
+(function hero(){
+  const cv = $("#corpus"), ctx = cv.getContext("2d");
+  let W, H, dots = [], center, R, t0 = performance.now(), visible = true;
+  function init(){
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+    const n = Math.round(Math.min(1600, W*H/420));
+    center = {x: W > 760 ? W*0.82 : W*0.78, y: H*0.32}; R = Math.min(W,H) * (W > 760 ? 0.13 : 0.1);
+    dots = Array.from({length:n}, () => { const x = Math.random()*W, y = Math.random()*H; return {x, y, hx:x, hy:y, tx:x, ty:y, ws:false, p:0}; })
+      .filter(d => Math.hypot(d.x-center.x, d.y-center.y) > R*1.25);
+  }
+  let pullCount = 0;
+  function doPull(){
+    if (pullCount >= 4){ dots.forEach(d => { d.ws = false; d.tx = d.hx; d.ty = d.hy; }); pullCount = 0; return; }
+    pullCount++;
+    const cand = dots.filter(d => !d.ws);
+    for (let i = 0; i < 26 && cand.length; i++){
+      const d = cand.splice(Math.floor(Math.random()*cand.length), 1)[0];
+      const a = Math.random()*Math.PI*2, r = Math.sqrt(Math.random())*R*0.88;
+      d.ws = true; d.tx = center.x + Math.cos(a)*r; d.ty = center.y + Math.sin(a)*r;
+    }
+  }
+  function frame(now){
+    if (!visible){ requestAnimationFrame(frame); return; }
+    ctx.clearRect(0,0,W,H);
+    const gray = css("--neutral-2"), dr = css("--dr");
+    ctx.strokeStyle = dr; ctx.globalAlpha = .55; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.arc(center.x, center.y, R, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.globalAlpha = .7; ctx.fillStyle = css("--muted"); ctx.font = "11px " + css("--mono");
+    ctx.textAlign = "center"; ctx.fillText("workspace", center.x, center.y + R + 16);
+    for (const d of dots){
+      d.x += (d.tx - d.x) * 0.045; d.y += (d.ty - d.y) * 0.045;
+      ctx.globalAlpha = d.ws ? .95 : .8; ctx.fillStyle = d.ws ? dr : gray;
+      ctx.fillRect(d.x-1.1, d.y-1.1, d.ws ? 2.8 : 2.2, d.ws ? 2.8 : 2.2);
+    }
+    ctx.globalAlpha = 1;
+    if (!reduced && now - t0 > 1700){ doPull(); t0 = now; }
+    if (!reduced) requestAnimationFrame(frame);
+  }
+  init();
+  if (reduced){ for (let i=0;i<3;i++) doPull(); dots.forEach(d => { d.x = d.tx; d.y = d.ty; }); frame(0); }
+  else requestAnimationFrame(frame);
+  new IntersectionObserver(es => visible = es[0].isIntersecting).observe(cv);
+  addEventListener("resize", () => { init(); if (reduced){ for (let i=0;i<3;i++) doPull(); dots.forEach(d=>{d.x=d.tx;d.y=d.ty;}); frame(0);} });
+  redraws.push(() => { if (reduced) frame(0); });
+})();
+
+/* ---------- terminal replay ---------- */
+(function term(){
+  const body = $("#termBody"), btn = $("#termPlay");
+  const script = [
+    ["cm", "# 질문: 일본 거미게(Japanese spider crab)의 사육 수온 지침을 낸 기관은?  (예시)"],
+    ["cmd", "pull(query=\"japanese spider crab aquarium husbandry\", topK=500)"],
+    ["out", "Workspace expanded.\nNew documents added: 384\nAlready visible from previous pulls: 116\nTotal visible documents: 1072\nTop ranked new documents:\n1. aza_japanese_spider_crab_care_manual.pdf.txt\n2. public_aquarium_husbandry_guidelines.txt\n...\nNext step: search/read the visible workspace. Use another pull only for a new clue or missing evidence."],
+    ["cm", "# 문서 간 DCI: 두 제약을 동시에 만족하는 파일만 남긴다"],
+    ["cmd", "$ rg -il 'macrocheira|spider crab' . | xargs rg -il 'water temperature' | head"],
+    ["out", "aza_japanese_spider_crab_care_manual.pdf.txt\npublic_aquarium_husbandry_guidelines.txt\n…"],
+    ["cmd", "$ rg -n -i 'temperature' aza_japanese_spider_crab_care_manual.pdf.txt | head -5"],
+    ["out", "412: …water temperature should be maintained…\n[output truncated: use read with offset to continue]"],
+    ["cm", "# 문서 내 DCI: 줄 오프셋으로 정확한 증거 구간만 읽는다"],
+    ["cmd", "read(path=\"aza_japanese_spider_crab_care_manual.pdf.txt\", offset=405, limit=20)"],
+    ["out", "405 | …\n412 | …water temperature should be maintained…\n424 | …"],
+    ["cm", "# 증거 검증 완료 → finalize"]
+  ];
+  let timer = null, playing = false;
+  function render(upto, partial){
+    body.innerHTML = "";
+    script.slice(0, upto).forEach(([c, t]) => { const s = document.createElement("div"); s.className = c; s.textContent = t; body.appendChild(s); });
+    if (partial){ const s = document.createElement("div"); s.className = partial[0]; s.textContent = partial[1]; const k = document.createElement("span"); k.className = "caret"; k.innerHTML = "&nbsp;"; s.appendChild(k); body.appendChild(s); }
+    body.scrollTop = body.scrollHeight;
+  }
+  function play(){
+    if (reduced){ render(script.length); return; }
+    clearTimeout(timer); playing = true; btn.textContent = "■ 정지";
+    let i = 0, j = 0;
+    const step = () => {
+      if (!playing) return;
+      if (i >= script.length){ playing = false; btn.textContent = "↻ 다시"; render(script.length); return; }
+      const [c, t] = script[i];
+      if (c === "out"){ render(i+1); i++; j = 0; timer = setTimeout(step, 650); return; }
+      j += c === "cm" ? 3 : 2;
+      if (j >= t.length){ render(i+1); i++; j = 0; timer = setTimeout(step, 380); }
+      else { render(i, [c, t.slice(0, j)]); timer = setTimeout(step, 22); }
+    };
+    step();
+  }
+  btn.addEventListener("click", () => { if (playing){ playing = false; clearTimeout(timer); btn.textContent = "▶ 재생"; } else play(); });
+  render(0, ["cm", "▶ 재생을 누르면 예시 트레이스가 재생됩니다"]);
+  new IntersectionObserver((es, ob) => { if (es[0].isIntersecting){ ob.disconnect(); play(); } }, {threshold:.5}).observe(body);
+})();
+
+/* ---------- pull stepper ---------- */
+(function stepper(){
+  const steps = [
+    {h:"0 · 빈 워크스페이스", d:"W₀ = ∅. 에이전트는 숨김 코퍼스를 직접 볼 수 없습니다. 첫 행동은 질문에서 뽑은 단서로 pull을 호출하는 것입니다.", total:0, nu:0, dup:0, pulls:0, mode:"idle"},
+    {h:"1 · expand — pull #1", d:"pull(query, topK)로 후보 398개가 워크스페이스에 하드링크로 물질화됩니다. 순위 프리뷰는 탐색 신호일 뿐입니다.", total:398, nu:398, dup:0, pulls:1, mode:"pull"},
+    {h:"2 · investigate — rg 교차 검색", d:"워크스페이스 안에서만 rg를 돌려 여러 제약을 동시에 만족하는 후보를 좁힙니다. 코퍼스 전체가 아니라 수백 개 파일이라 30초 안에 끝납니다.", total:398, nu:0, dup:0, pulls:1, mode:"rg"},
+    {h:"3 · expand — pull #2 (새 단서)", d:"rg로 찾은 브리지 엔티티라는 새 단서로 다시 pull. 351개가 새로 추가되고, 41개는 이미 보이던 문서라 중복 제거됩니다(ΔW ∩ W = ∅).", total:749, nu:351, dup:41, pulls:2, mode:"pull"},
+    {h:"4 · investigate — read로 구간 확대", d:"read에 줄 오프셋을 주어 후보 문서의 정확한 증거 구간을 확인하고 오답 후보를 배제합니다.", total:749, nu:0, dup:0, pulls:2, mode:"read"},
+    {h:"5 · finalize", d:"검증된 증거로 답을 제출합니다. 신뢰도가 낮고 기권하면 워크스페이스 보존형 컨텍스트 리셋이 트리거됩니다(→ 05).", total:749, nu:0, dup:0, pulls:2, mode:"done"}
+  ];
+  const ol = $("#steps");
+  steps.forEach((s, i) => { const li = document.createElement("li"); li.innerHTML = `<div class="h">${s.h}</div><div class="d">${s.d}</div>`; li.tabIndex = 0; li.addEventListener("click", () => go(i)); li.addEventListener("keydown", e => { if (e.key==="Enter"||e.key===" "){ e.preventDefault(); go(i);} }); ol.appendChild(li); });
+  const cv = $("#wsCanvas"), ctx = cv.getContext("2d");
+  let W, H, corpus = [], ws = [], cur = 0, raf = null, auto = null, hot = new Set();
+  const DOC_PER_DOT = 5;
+  function layout(){
+    const dpr = Math.min(devicePixelRatio||1, 2);
+    W = cv.clientWidth; H = cv.clientHeight; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function wsSlot(i){ // grid inside right box
+    const bx = W*0.56, by = 30, bw = W*0.42, bh = H-50, cols = Math.max(8, Math.floor(bw/9));
+    return {x: bx + 8 + (i % cols) * ((bw-16)/cols), y: by + 10 + Math.floor(i / cols) * 9};
+  }
+  function seed(){
+    layout();
+    corpus = [];
+    const n = 900;
+    for (let i=0;i<n;i++) corpus.push({x: 10 + Math.random()*(W*0.5-20), y: 30 + Math.random()*(H-50), taken:false});
+    ws = [];
+  }
+  function apply(i){
+    const target = Math.round(steps[i].total / DOC_PER_DOT);
+    while (ws.length > target){ const d = ws.pop(); d.src.taken = false; }
+    hot.clear();
+    if (ws.length < target){
+      const need = target - ws.length, free = corpus.filter(c => !c.taken);
+      for (let k=0;k<need && free.length;k++){
+        const c = free.splice(Math.floor(Math.random()*free.length),1)[0]; c.taken = true;
+        const slot = wsSlot(ws.length);
+        ws.push({x:c.x, y:c.y, tx:slot.x, ty:slot.y, src:c, fresh:true});
+      }
+      const dupDots = Math.round(steps[i].dup / DOC_PER_DOT);
+      for (let k=0;k<dupDots && k < ws.length - need;k++) hot.add(Math.floor(Math.random()*(ws.length-need)));
+    }
+    if (steps[i].mode === "rg") while (hot.size < 14) hot.add(Math.floor(Math.random()*ws.length));
+    if (steps[i].mode === "read" || steps[i].mode === "done") { const keep = [...Array(ws.length).keys()].sort(()=>Math.random()-.5).slice(0, steps[i].mode==="read"?3:1); keep.forEach(k=>hot.add(k)); }
+    if (steps[i].mode !== "pull") ws.forEach(d => d.fresh = false);
+    if (reduced) ws.forEach(d => { d.x = d.tx; d.y = d.ty; });
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const gray = css("--neutral-2"), dr = css("--dr"), muted = css("--muted"), txt = css("--text");
+    ctx.font = "11px " + css("--mono"); ctx.fillStyle = muted; ctx.textAlign = "left";
+    ctx.fillText("hidden corpus C", 10, 18); ctx.fillText("workspace W_t", W*0.56, 18);
+    ctx.strokeStyle = dr; ctx.lineWidth = 1; ctx.setLineDash([4,3]); ctx.strokeRect(W*0.56, 26, W*0.42, H-38); ctx.setLineDash([]);
+    for (const c of corpus){ if (c.taken) continue; ctx.fillStyle = gray; ctx.fillRect(c.x-1, c.y-1, 2.2, 2.2); }
+    let moving = false;
+    ws.forEach((d, i) => {
+      const dx = d.tx - d.x, dy = d.ty - d.y;
+      if (Math.abs(dx) + Math.abs(dy) > .5){ d.x += dx*0.08; d.y += dy*0.08; moving = true; }
+      ctx.fillStyle = dr; ctx.globalAlpha = d.fresh ? 1 : .75;
+      ctx.beginPath(); ctx.arc(d.x, d.y, 2.6, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
+      if (hot.has(i)){ ctx.strokeStyle = txt; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(d.x, d.y, 4.6, 0, Math.PI*2); ctx.stroke(); }
+    });
+    const m = steps[cur].mode;
+    const label = {idle:"", pull:"> pull(...)", rg:"> rg -l 'A' | xargs rg -l 'B'", read:"> read(path, offset=…)", done:"> finalize(answer)"}[m];
+    if (label){ ctx.fillStyle = css("--accent-ink"); ctx.fillText(label, W*0.56 + 6, H - 6); }
+    if (moving && !reduced) raf = requestAnimationFrame(draw); else raf = null;
+  }
+  function kick(){ if (!raf) raf = requestAnimationFrame(draw); }
+  function counter(id, v){ $(id).textContent = v.toLocaleString(); }
+  function go(i){
+    cur = Math.max(0, Math.min(steps.length-1, i));
+    $$("li", ol).forEach((li, k) => { li.classList.toggle("cur", k===cur); li.classList.toggle("done", k<cur); });
+    const s = steps[cur];
+    counter("#wsTotal", s.total); counter("#wsNew", s.nu); counter("#wsDup", s.dup); counter("#wsPulls", s.pulls);
+    apply(cur); kick();
+  }
+  $("#stPrev").onclick = () => { stopAuto(); go(cur-1); };
+  $("#stNext").onclick = () => { stopAuto(); go(cur+1); };
+  function stopAuto(){ clearInterval(auto); auto = null; $("#stAuto").textContent = "▶ 자동 재생"; }
+  $("#stAuto").onclick = () => {
+    if (auto){ stopAuto(); return; }
+    if (cur === steps.length-1) { seed(); go(0); }
+    $("#stAuto").textContent = "■ 정지";
+    auto = setInterval(() => { if (cur >= steps.length-1) stopAuto(); else go(cur+1); }, 2200);
+  };
+  seed(); go(0);
+  addEventListener("resize", () => { const c = cur; seed(); for (let k=0;k<=c;k++) apply(k); cur = c; ws.forEach(d=>{d.x=d.tx;d.y=d.ty;}); kick(); });
+  redraws.push(kick);
+})();
+
+/* ---------- architecture ---------- */
+(function arch(){
+  const nodes = [
+    {t:"LLM 에이전트", s:"GPT-5.4 nano (high)", d:"<b>LLM 에이전트</b><ul><li>프롬프팅만, RL/SFT 없음</li><li>세 가지 행동: expand(pull) · investigate(bash/read) · finalize</li><li>메모리 관리 L3(압축), 300턴 제한, bash·read 병렬 실행</li><li>topK를 300–600 사이에서 스스로 선택</li></ul>"},
+    {t:"Pi 하네스", s:"pull · bash · read", d:"<b>Pi 하네스 (pi-mono, TypeScript)</b><ul><li>bash 출력은 마지막 2000줄 또는 10KB까지만 반환</li><li>잘리면 <code>read</code> offset / <code>charOffset</code> 이어읽기 힌트를 붙임 (Long-Line Continuation Hint)</li><li>도구 타임아웃 30초</li><li>실행 계층이 에이전트를 검색·읽기로 제한</li></ul>"},
+    {t:"리트리버 서비스", s:":8002/retrieve", d:"<b>리트리버 서비스 (tools/dense_retriever)</b><ul><li>Dense: Qwen3-Embedding-8B (FAISS, 4개 샤드 인덱스) — 82/100, 117초</li><li>Sparse: BM25 (Pyserini) — 80/100, 302초</li><li>포트는 <code>DR_DCI_RETRIEVER_PORT</code>(기본 8002)</li></ul>"},
+    {t:"불변 코퍼스 저장소", s:"backing store (read-only)", d:"<b>불변 백킹 스토어</b><ul><li>원본 문서는 절대 수정되지 않음</li><li>셸 안전 파일명으로 정규화하고, 원제목·URL·순위·출처는 메타데이터로 보존</li><li>OCR/PDF 추출로 생긴 한 줄짜리 문서는 1200자 폭으로 선택적 리플로</li></ul>"},
+    {t:"워크스페이스", s:"/tmp/dci_views", d:"<b>워크스페이스 (DCI_VIEW_CACHE_ROOT)</b><ul><li><b>하드링크 물질화</b>: 복사 없이 같은 inode를 가리킴 → pull이 빠르고 디스크를 쓰지 않음</li><li><b>root-flat</b>: pull_N 폴더 없이 한 디렉터리에 중복 제거해 배치. 순위는 경로가 아니라 도구 응답으로 전달 (순위별 폴더 75/100 vs root-flat 82/100)</li><li>문항당 약 1K–1.4K 문서로 유지</li><li>주의: 하드링크는 같은 파일시스템 안에서만 동작</li></ul>"}
+  ];
+  const wrap = $("#archNodes"), det = $("#archDetail");
+  nodes.forEach((n, i) => {
+    if (i){ const l = document.createElement("span"); l.className = "link"; l.textContent = "⇄"; l.setAttribute("aria-hidden","true"); wrap.appendChild(l); }
+    const b = document.createElement("button"); b.className = "node"; b.setAttribute("role","tab");
+    b.innerHTML = `<span class="nt">${n.t}</span><span class="ns">${n.s}</span>`;
+    b.addEventListener("click", () => sel(i)); wrap.appendChild(b);
+  });
+  function sel(i){ $$(".node", wrap).forEach((b,k) => { b.classList.toggle("on", k===i); b.setAttribute("aria-selected", k===i); }); det.innerHTML = nodes[i].d; }
+  sel(4);
+})();
+
+/* ---------- waffle ---------- */
+(function(){ const w = $("#waffle"); for (let i=0;i<49;i++){ const c = document.createElement("i"); if (i<17) c.className = "ok"; w.appendChild(c); } })();
+
+/* ---------- table 1 ---------- */
+(function t1(){
+  const data = [
+    {name:"Raw-DCI (DCI-Agent-Lite)", acc:62.90, tools:37.53, turns:38.24, wall:3139.10, cost:88.13},
+    {name:"DR-DCI", acc:71.20, tools:30.94, turns:31.46, wall:146.16, cost:34.91, hl:true},
+    {name:"DR-DCI + 컨텍스트 리셋", acc:73.25, tools:38.37, turns:34.06, wall:176.13, cost:39.35, hl:true}
+  ];
+  const fmt = {acc:v=>v.toFixed(2)+"%", tools:v=>v.toFixed(2), turns:v=>v.toFixed(2), wall:v=>v.toFixed(2)+"s", cost:v=>"$"+v.toFixed(2)};
+  const tb = $("#t1 tbody"); let key = null, dir = 1;
+  function render(){
+    const rows = [...data]; if (key) rows.sort((a,b) => (a[key] > b[key] ? 1 : a[key] < b[key] ? -1 : 0) * dir);
+    tb.innerHTML = rows.map(r => `<tr class="${r.hl?"hl":""}"><td>${r.name}</td>${["acc","tools","turns","wall","cost"].map(k=>`<td>${fmt[k](r[k])}</td>`).join("")}</tr>`).join("");
+    $$("#t1 th").forEach(th => { th.style.cursor = "pointer"; th.textContent = th.textContent.replace(/ [▲▼]$/,""); if (th.dataset.k === key) th.textContent += dir>0?" ▲":" ▼"; });
+  }
+  $$("#t1 th").forEach(th => { th.tabIndex = 0; const f = () => { if (key === th.dataset.k) dir = -dir; else { key = th.dataset.k; dir = 1; } render(); }; th.addEventListener("click", f); th.addEventListener("keydown", e => { if (e.key==="Enter") f(); }); });
+  render();
+})();
+
+/* ---------- generic horizontal bars ---------- */
+function hbars(container, items, {max, fmt, unit=""}){
+  function draw(){
+    container.innerHTML = "";
+    const w = container.clientWidth || 600, lw = Math.min(190, w*0.38), rh = 34, h = items.length*rh + 6;
+    const svg = el("svg", {width:w, height:h, viewBox:`0 0 ${w} ${h}`, role:"img", "aria-label": items.map(i=>`${i.name} ${fmt(i.v)}`).join(", ")}, container);
+    const pw = w - lw - 70;
+    items.forEach((it, i) => {
+      const y = i*rh + 6, bw = Math.max(2, it.v/max*pw);
+      el("text", {x:0, y:y+15, fill:css("--text-2"), "font-size":12}, svg).textContent = it.name;
+      const r = el("path", {d:`M${lw},${y+4} h${bw-4} a4,4 0 0 1 4,4 v8 a4,4 0 0 1 -4,4 h${-(bw-4)} z`, fill:css(it.color)}, svg);
+      el("text", {x:lw+bw+8, y:y+16, fill:css("--text"), "font-size":12, "font-weight":600}, svg).textContent = fmt(it.v);
+      const hit = el("rect", {x:0, y:y, width:w, height:rh-4, fill:"transparent"}, svg);
+      hit.addEventListener("mousemove", e => showTip(`<b>${it.name}</b>${row(css(it.color), it.label||"값", fmt(it.v))}${it.extra||""}`, e.clientX, e.clientY));
+      hit.addEventListener("mouseleave", hideTip);
+    });
+  }
+  draw(); redraws.push(draw); new ResizeObserver(draw).observe(container);
+}
+hbars($("#wallChart"), [
+  {name:"Raw-DCI", v:3139.10, color:"--raw", label:"평균 벽시계"},
+  {name:"DR-DCI", v:146.16, color:"--dr", label:"평균 벽시계", extra:`<div class="muted" style="font-size:.75rem">Raw-DCI 대비 21.5배 빠름</div>`},
+  {name:"DR-DCI + 리셋", v:176.13, color:"--dr", label:"평균 벽시계"}
+], {max:3139.10, fmt:v=>v.toLocaleString(undefined,{maximumFractionDigits:0})+"s"});
+
+/* ---------- scaling chart ---------- */
+(function scaling(){
+  const xs = [{k:"100K", n:1e5},{k:"200K", n:2e5},{k:"400K", n:4e5},{k:"800K", n:8e5},{k:"10M", n:1e7}];
+  const S = {
+    dr:  {name:"DR-DCI", color:"--dr", acc:[80,77,74,72,70], err:[2.0,1.9,1.8,2.4,1.3], cost:[5.17,4.64,4.03,5.14,5.06]},
+    raw: {name:"Raw-DCI", color:"--raw", acc:[67,66,32,29,null], err:[1.6,35.9,45.7,54.7,null], cost:[11.72,11.42,17.82,15.68,null]},
+    bm:  {name:"BM25 검색 전용", color:"--bm25", acc:[38,48,48,53,53], err:null, cost:null}
+  };
+  const M = {
+    acc:{label:"정확도 (/100)", max:100, fmt:v=>v+"/100", note:"Table 12. Raw-DCI 10M은 측정 불가(논문 그림 3의 800K 초과 구간은 외삽이라 여기서는 그리지 않음)."},
+    err:{label:"도구 오류율 (%)", max:60, fmt:v=>v.toFixed(1)+"%", note:"Table 13. Raw-DCI는 200K부터 타임아웃 등 도구 오류가 급증합니다. BM25 검색 전용은 셸 도구가 없어 해당 없음."},
+    cost:{label:"비용 ($, BCP-100 실행)", max:20, fmt:v=>"$"+v.toFixed(2), note:"Table 13. 단위는 BCP-100 실행 기준 금액입니다(한계 섹션의 미확인 사항 참고). BM25 검색 전용은 해당 없음."}
+  };
+  let metric = "acc";
+  const box = $("#scaleChart");
+  function draw(){
+    box.innerHTML = "";
+    const m = M[metric], w = box.clientWidth || 700, h = Math.max(260, Math.min(360, w*0.5));
+    const pad = {l:44, r: w < 520 ? 16 : 90, t:14, b:34};
+    const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+    const lx = n => pad.l + (Math.log10(n) - 5) / 2 * pw;
+    const ly = v => pad.t + ph - v / m.max * ph;
+    const svg = el("svg", {width:w, height:h, viewBox:`0 0 ${w} ${h}`, role:"img", "aria-label": `코퍼스 크기별 ${m.label} 라인 차트`}, box);
+    const ax = el("g", {class:"axis"}, svg);
+    const ticks = metric==="acc" ? [0,25,50,75,100] : metric==="err" ? [0,20,40,60] : [0,5,10,15,20];
+    ticks.forEach(t => { el("line", {x1:pad.l, x2:w-pad.r, y1:ly(t), y2:ly(t)}, ax); el("text", {x:pad.l-8, y:ly(t)+4, "text-anchor":"end"}, ax).textContent = t; });
+    xs.forEach(x => { el("text", {x:lx(x.n), y:h-12, "text-anchor":"middle"}, ax).textContent = x.k; });
+    const series = Object.entries(S).filter(([k,s]) => s[metric]);
+    series.forEach(([k, s]) => {
+      const pts = s[metric].map((v,i) => v==null ? null : [lx(xs[i].n), ly(v)]).filter(Boolean);
+      el("path", {d: pts.map((p,i)=>(i?"L":"M")+p[0]+","+p[1]).join(" "), fill:"none", stroke:css(s.color), "stroke-width":2, "stroke-linejoin":"round"}, svg);
+      pts.forEach(p => el("circle", {cx:p[0], cy:p[1], r:4.5, fill:css(s.color), stroke:css("--surface"), "stroke-width":2}, svg));
+      if (w >= 520){ const last = pts[pts.length-1]; el("text", {x:last[0]+10, y:last[1]+4, fill:css("--text-2"), "font-size":12}, svg).textContent = s.name; }
+    });
+    if (S.raw[metric]){
+      const lastRaw = S.raw[metric].findLastIndex ? S.raw[metric].findLastIndex(v=>v!=null) : 3;
+      el("text", {x:lx(1e7), y:ly(S.raw[metric][lastRaw]) , fill:css("--muted"), "font-size":11, "text-anchor":"end"}, svg).textContent = "Raw-DCI 10M: 측정 불가";
+    }
+    // annotation: corpus 100x
+    const cross = el("line", {x1:0, x2:0, y1:pad.t, y2:pad.t+ph, stroke:css("--muted"), "stroke-dasharray":"3 3", opacity:0}, svg);
+    const hit = el("rect", {x:pad.l, y:pad.t, width:pw, height:ph, fill:"transparent"}, svg);
+    hit.addEventListener("mousemove", e => {
+      const r = svg.getBoundingClientRect(), mx = e.clientX - r.left;
+      let bi = 0, bd = 1e9; xs.forEach((x,i) => { const d = Math.abs(lx(x.n) - mx); if (d < bd){ bd = d; bi = i; } });
+      cross.setAttribute("x1", lx(xs[bi].n)); cross.setAttribute("x2", lx(xs[bi].n)); cross.setAttribute("opacity", 1);
+      const rows = series.map(([k,s]) => row(css(s.color), s.name, s[metric][bi]==null ? "측정 불가" : m.fmt(s[metric][bi]))).join("");
+      showTip(`<b>코퍼스 ${xs[bi].k}</b>${rows}`, e.clientX, e.clientY);
+    });
+    hit.addEventListener("mouseleave", () => { hideTip(); cross.setAttribute("opacity", 0); });
+    $("#scaleLegend").innerHTML = series.map(([k,s]) => `<span><span class="sw" style="background:var(${s.color})"></span>${s.name}</span>`).join("");
+    $("#scaleNote").textContent = m.note + " x축은 로그 스케일.";
+    $("#scaleTable").innerHTML = `<table><thead><tr><th>코퍼스</th>${series.map(([k,s])=>`<th>${s.name}</th>`).join("")}</tr></thead><tbody>${xs.map((x,i)=>`<tr><td>${x.k}</td>${series.map(([k,s])=>`<td>${s[metric][i]==null?"측정 불가":m.fmt(s[metric][i])}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  }
+  $$("#metricBtns button").forEach(b => b.addEventListener("click", () => { metric = b.dataset.m; $$("#metricBtns button").forEach(x => x.setAttribute("aria-pressed", x===b)); draw(); }));
+  draw(); redraws.push(draw); new ResizeObserver(draw).observe(box);
+
+  // corpus vs workspace boxes
+  const sl = $("#corpusSlider");
+  function boxes(){
+    const x = xs[+sl.value], maxSide = 160, ws = 1200;
+    const wsSide = Math.max(2, Math.sqrt(ws / x.n) * maxSide);   // 면적 ∝ 문서 수, 코퍼스 상자는 고정
+    $("#corpusLab").textContent = x.k;
+    Object.assign($("#boxCorpus").style, {width: maxSide+"px", height: maxSide+"px"});
+    Object.assign($("#boxWs").style, {width: wsSide+"px", height: wsSide+"px"});
+    $("#ratioLab").textContent = "≈ " + (ws / x.n * 100).toPrecision(2) + "%";
+  }
+  sl.addEventListener("input", boxes); boxes();
+})();
+
+/* ---------- wiki chart (dot strip) ---------- */
+(function wiki(){
+  const ds = ["NQ","TriviaQA","Bamboogle","HotpotQA","2Wiki","MuSiQue","평균"];
+  const base = [
+    {name:"ASearcher-Local-14B", v:[56,58,62,58,56,24,52.33]},
+    {name:"Search-R1-32B", v:[56,46,52,44,50,32,46.67]},
+    {name:"R1-Searcher-7B", v:[58,50,54,46,40,24,45.33]}
+  ];
+  const dr = [62,82,64,68,58,44,63.00];
+  const box = $("#wikiChart");
+  function draw(){
+    box.innerHTML = "";
+    const w = box.clientWidth || 700, rh = 36, pad = {l:84, r:40, t:20, b:26}, h = pad.t + ds.length*rh + pad.b;
+    const pw = w - pad.l - pad.r, lx = v => pad.l + v/100*pw;
+    const svg = el("svg", {width:w, height:h, viewBox:`0 0 ${w} ${h}`, role:"img", "aria-label":"Wiki-18 데이터셋별 DR-DCI와 기준선 정확도 도트 플롯"}, box);
+    const ax = el("g", {class:"axis"}, svg);
+    [0,20,40,60,80,100].forEach(t => { el("line", {x1:lx(t), x2:lx(t), y1:pad.t-6, y2:h-pad.b}, ax); el("text", {x:lx(t), y:h-8, "text-anchor":"middle"}, ax).textContent = t; });
+    ds.forEach((d, i) => {
+      const y = pad.t + i*rh + rh/2;
+      if (i === ds.length-1) el("line", {x1:0, x2:w, y1:y-rh/2, y2:y-rh/2, stroke:css("--border")}, svg);
+      el("text", {x:0, y:y+4, fill:css(i===ds.length-1?"--text":"--text-2"), "font-size":12, "font-weight": i===ds.length-1?600:400}, svg).textContent = d;
+      const vals = base.map(b => b.v[i]).concat(dr[i]);
+      el("line", {x1:lx(Math.min(...vals)), x2:lx(Math.max(...vals)), y1:y, y2:y, stroke:css("--neutral-2"), "stroke-width":2}, svg);
+      base.forEach((b, k) => el("circle", {cx:lx(b.v[i]), cy:y, r:5, fill:css("--surface"), stroke:css("--neutral"), "stroke-width":2}, svg));
+      el("circle", {cx:lx(dr[i]), cy:y, r:6.5, fill:css("--dr"), stroke:css("--surface"), "stroke-width":2}, svg);
+      el("text", {x:lx(dr[i])+11, y:y+4, fill:css("--text"), "font-size":11, "font-weight":600}, svg).textContent = i===ds.length-1 ? dr[i].toFixed(1) : dr[i];
+      const hit = el("rect", {x:0, y:y-rh/2, width:w, height:rh, fill:"transparent"}, svg);
+      hit.addEventListener("mousemove", e => showTip(`<b>${d}</b>${row(css("--dr"),"DR-DCI",dr[i])}${base.map(b=>row(css("--neutral"),b.name,b.v[i],true)).join("")}`, e.clientX, e.clientY));
+      hit.addEventListener("mouseleave", hideTip);
+    });
+  }
+  draw(); redraws.push(draw); new ResizeObserver(draw).observe(box);
+  $("#wikiTable").innerHTML = `<table><thead><tr><th>방법</th>${ds.map(d=>`<th>${d}</th>`).join("")}</tr></thead><tbody>${base.map(b=>`<tr><td>${b.name}</td>${b.v.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}<tr class="hl"><td>DR-DCI (GPT-5.4 nano)</td>${dr.map(v=>`<td>${v}</td>`).join("")}</tr></tbody></table>`;
+})();
+
+/* ---------- ablation ---------- */
+(function abl(){
+  const opts = [
+    {t:"전체 구성 (Dynamic Pull 300–600, 순위 top-20 프리뷰, 문서 간 DCI, root-flat)", v:82, n:"도구 26.37회, 103.73초, $3.44. 이후 항목은 모두 여기서 한 부품만 바꾼 값입니다."},
+    {t:"Dynamic → Single Pull", s:"시작 시 topK=500으로 한 번만 pull", v:79, n:"정확도는 3점만 떨어지지만 도구 호출이 26.37회 → 60.33회로 2.3배가 됩니다. 동적 확장의 이득은 주로 효율입니다."},
+    {t:"순위 프리뷰 숨김", s:"pull 응답에서 top-20 목록 제거", v:72, n:"순위 프리뷰는 답의 근거는 아니지만, 어디부터 읽을지 정하는 탐색 신호로서 10점의 가치가 있습니다."},
+    {t:"순위 프리뷰 순서 섞기", s:"top-20 파일은 보여주되 순서를 무작위로", v:76, n:"같은 파일 목록이라도 순서 정보가 사라지면 6점 하락. 순위 자체가 신호입니다."},
+    {t:"문서 간(inter-document) DCI 차단", s:"프리뷰는 유지, 여러 파일을 가로지르는 rg/grep 금지", v:40, bad:true, n:"정확도가 반토막. 에이전트는 pull 호출을 3.49회 → 20.50회로 늘려 보상하려 하지만 실패합니다. DR-DCI는 “검색 결과 리더”가 아닙니다."},
+    {t:"root-flat → 순위별 폴더 (pull_N/)", s:"pull마다 하위 폴더에 배치", v:75, n:"워크스페이스 리콜은 오히려 가장 높았지만(Gold R@W 0.8541 vs 0.8033) 정확도는 7점 낮습니다. 리콜 ≠ 정확도."}
+  ];
+  const box = $("#ablOpts");
+  opts.forEach((o, i) => {
+    const l = document.createElement("label");
+    l.innerHTML = `<input type="radio" name="abl" value="${i}" ${i===0?"checked":""}><span>${o.t}${o.s?`<small>${o.s}</small>`:""}</span>`;
+    l.querySelector("input").addEventListener("change", () => set(i)); box.appendChild(l);
+  });
+  function set(i){
+    const o = opts[i], d = o.v - 82;
+    $("#ablVal").textContent = o.v;
+    $("#ablDelta").textContent = i ? (d>0?"+":"") + d + "pt" : "기준";
+    $("#ablDelta").style.color = d < -20 ? "var(--raw-ink)" : "var(--text-2)";
+    const bar = $("#ablBar"); bar.style.width = o.v + "%"; bar.classList.toggle("bad", !!o.bad);
+    $("#ablNote").textContent = o.n;
+  }
+  set(0);
+})();
+
+/* ---------- tool mix ---------- */
+(function mix(){
+  const box = $("#toolMix");
+  const data = [
+    {name:"Raw-DCI", parts:[{k:"bash", v:89.69, c:"--raw"},{k:"기타", v:10.31, c:"--neutral"}]},
+    {name:"DR-DCI", parts:[{k:"bash", v:64.26, c:"--raw"},{k:"read", v:23.29, c:"--bm25"},{k:"pull/filter", v:12.45, c:"--dr"}]}
+  ];
+  box.innerHTML = `<div class="legend" style="margin-bottom:6px"><span><span class="dot" style="background:var(--raw)"></span>bash</span><span><span class="dot" style="background:var(--bm25)"></span>read</span><span><span class="dot" style="background:var(--dr)"></span>pull/filter</span><span><span class="dot" style="background:var(--neutral)"></span>기타(세부 미보고)</span></div>` +
+    data.map(d => `<div style="font-size:.82rem;color:var(--text-2);margin-top:10px">${d.name}</div><div class="stack">${d.parts.map(p => `<div style="width:${p.v}%;background:var(${p.c})" data-t="${d.name} · ${p.k}: ${p.v}%">${p.v>9?p.v+"%":""}</div>`).join("")}</div>`).join("");
+  $$(".stack div", box).forEach(s => { s.addEventListener("mousemove", e => showTip(s.dataset.t, e.clientX, e.clientY)); s.addEventListener("mouseleave", hideTip); });
+})();
+
+/* ---------- related map ---------- */
+(function map(){
+  const P = [
+    {n:"고전 RAG", x:.92, y:.08, r:"1회 top-k 컨텍스트 선택", i:"없음", s:"—"},
+    {n:"Search-R1 / ASearcher", x:.78, y:.3, r:"반복 호출되는 검색 도구", i:"스니펫과 문서 뷰", s:"Wiki-18 ASearcher-Local-14B 52.33"},
+    {n:"Raw DCI (DCI-Agent)", x:.05, y:.92, r:"없음", i:"전체 코퍼스에 셸", s:"BCP 62.9% (Lite, nano) / 80.0% (CC, Sonnet 4.6)"},
+    {n:"GrepSeek", x:.1, y:.8, r:"없음, RL 학습", i:"셸, 샤드 병렬 실행", s:"QA micro F1 0.5691"},
+    {n:"RISE", x:.72, y:.8, r:"BM25로 상호작용 공간 구성", i:"셸 + TOC 처리 문서", s:"BCP 78% (gpt-5.4-mini), 1M 문서 81%"},
+    {n:"DR-DCI", x:.52, y:.86, r:"에이전트가 호출하는 점진적 워크스페이스 확장", i:"워크스페이스 내 셸", s:"BCP 71.2% / 73.25% (nano)", me:true},
+    {n:"RARG", x:.34, y:.72, r:"관련도를 rg 순회 순서 사전 정보로", i:"재순위화된 grep 매치", s:"BCP-100 84% (RARG++, mini)"},
+    {n:"Fetch-then-Explore", x:.62, y:.66, r:"웹 페이지를 영속 워크스페이스에 저장", i:"grep/read", s:"오픈 웹 BrowseComp·WideSearch"}
+  ];
+  $("#relTable").innerHTML = P.map(p => `<tr class="${p.me?"hl":""}"><td>${p.n}</td><td style="text-align:left;white-space:normal">${p.r}</td><td style="text-align:left;white-space:normal">${p.i}</td><td style="text-align:left;white-space:normal">${p.s}</td></tr>`).join("");
+  const box = $("#mapChart");
+  function draw(){
+    box.innerHTML = "";
+    const w = box.clientWidth || 700, h = Math.max(300, Math.min(420, w*0.55)), pad = {l:34, r:20, t:16, b:34};
+    const pw = w-pad.l-pad.r, ph = h-pad.t-pad.b, X = v => pad.l + v*pw, Y = v => pad.t + (1-v)*ph;
+    const svg = el("svg", {width:w, height:h, viewBox:`0 0 ${w} ${h}`, role:"img", "aria-label":"관련 연구 정성 배치 지도"}, box);
+    el("rect", {x:pad.l, y:pad.t, width:pw, height:ph, fill:"none", stroke:css("--grid")}, svg);
+    el("line", {x1:X(.5), x2:X(.5), y1:pad.t, y2:pad.t+ph, stroke:css("--grid"), "stroke-dasharray":"3 3"}, svg);
+    el("line", {x1:pad.l, x2:pad.l+pw, y1:Y(.5), y2:Y(.5), stroke:css("--grid"), "stroke-dasharray":"3 3"}, svg);
+    const t1 = el("text", {x:pad.l+pw/2, y:h-10, "text-anchor":"middle", fill:css("--muted"), "font-size":11}, svg); t1.textContent = "← 검색 없음 · 검색이 탐색 공간을 정하는 정도 · 검색이 전부 →";
+    const t2 = el("text", {x:12, y:pad.t+ph/2, "text-anchor":"middle", fill:css("--muted"), "font-size":11, transform:`rotate(-90 12 ${pad.t+ph/2})`}, svg); t2.textContent = "상호작용 해상도 (스니펫 → 셸) →";
+    P.forEach(p => {
+      const cx = X(p.x), cy = Y(p.y), right = p.x < .7;
+      el("circle", {cx, cy, r:p.me?8:6, fill:css(p.me?"--dr":"--neutral"), stroke:css("--surface"), "stroke-width":2}, svg);
+      const lab = el("text", {x: right ? cx+11 : cx-11, y:cy+4, "text-anchor": right ? "start":"end", fill:css(p.me?"--text":"--text-2"), "font-size":w<480?10:12, "font-weight":p.me?600:400}, svg); lab.textContent = p.n;
+      const hit = el("circle", {cx, cy, r:18, fill:"transparent"}, svg);
+      hit.addEventListener("mousemove", e => showTip(`<b>${p.n}</b><div class="t2">검색: ${p.r}</div><div class="t2">상호작용: ${p.i}</div><div>${p.s}</div>`, e.clientX, e.clientY));
+      hit.addEventListener("mouseleave", hideTip);
+    });
+  }
+  draw(); redraws.push(draw); new ResizeObserver(draw).observe(box);
+})();
+
+/* ---------- guide tabs ---------- */
+$$("#guideTabs button").forEach(b => b.addEventListener("click", () => {
+  $$("#guideTabs button").forEach(x => x.setAttribute("aria-selected", x===b));
+  $$("#guide .panel").forEach(p => p.hidden = p.id !== b.dataset.p);
+}));
+
+/* ---------- checklist ---------- */
+(function cl(){
+  const items = [
+    "샌드박스 + 백킹 스토어 읽기 전용 마운트 + 명령 허용 목록(검색·읽기만)",
+    "하드링크는 같은 파일시스템에서만 동작 — 코퍼스와 워크스페이스 캐시를 같은 볼륨에 배치",
+    "워크스페이스 캐시(/tmp/dci_views) 정리 정책 수립",
+    "지연 예산 확인: 문항당 평균 ~146초 → 대화형보다 비동기 ‘딥 리서치’ 작업에 적합",
+    "임베딩 인프라가 없으면 BM25로 시작(80/100), 필요 시 dense로 교체(82/100, 약 2.6배 빠름)",
+    "정확한 문자열 제약·문서 간 대조가 중요한 데이터(사내 문서, 로그, 티켓)인지 확인",
+    "bash 출력 절단(2000줄/10KB)과 이어읽기 힌트 구현",
+    "신뢰도 + 기권 기반 컨텍스트 리셋 트리거 도입 검토"
+  ];
+  let saved = {}; try { saved = JSON.parse(store.get("drdci-checklist") || "{}"); } catch(e){}
+  const box = $("#checklist");
+  items.forEach((t, i) => {
+    const l = document.createElement("label"); l.className = "check";
+    l.innerHTML = `<input type="checkbox" ${saved[i]?"checked":""}><span>${t}</span>`;
+    l.querySelector("input").addEventListener("change", e => { saved[i] = e.target.checked; store.set("drdci-checklist", JSON.stringify(saved)); });
+    box.appendChild(l);
+  });
+})();
+
+})();
+</script>
+</body>
+</html>
