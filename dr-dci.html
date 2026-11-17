@@ -107,6 +107,30 @@ pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;p
 .hero .btn-row{margin-top:20px}
 .hero .btn{text-decoration:none}
 
+
+/* ---------- easy explainer box ---------- */
+.easy{position:relative;margin-top:24px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;max-width:1000px}
+.easy-tag{display:inline-block;font-family:var(--mono);font-size:.75rem;color:var(--bg);background:var(--accent-ink);border-radius:4px;padding:.1em .55em;margin-bottom:8px}
+.easy h2{font-size:1.3rem;margin:0 0 .3em}
+.easy .lead{color:var(--text-2);margin:0 0 14px}
+.easy-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:820px){.easy-cols{grid-template-columns:minmax(0,1fr)}}
+.easy-col{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--bg)}
+.easy-col.me{border-color:var(--dr);box-shadow:0 0 0 1px var(--dr) inset}
+.easy-col h3{margin:0 0 2px;font-size:1rem}
+.easy-col .who{font-size:.78rem;color:var(--muted);font-family:var(--mono)}
+.easy-col ol{margin:10px 0 8px;padding-left:1.2em;font-size:.9rem}
+.easy-col ol li{margin:.25em 0}
+.easy-col .verdict{font-size:.85rem;border-top:1px dashed var(--border);padding-top:8px;margin-top:6px}
+.easy-col .verdict .good{color:var(--accent-ink);font-weight:600}
+.easy-col .verdict .bad{color:var(--raw-ink);font-weight:600}
+.easy-key{margin-top:14px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:820px){.easy-key{grid-template-columns:minmax(0,1fr)}}
+.easy-key .k{background:var(--surface-2);border-radius:8px;padding:12px 14px;font-size:.9rem}
+.easy-key .k b.hl{color:var(--accent-ink)}
+.easy-nums{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px;font-family:var(--mono);font-size:.85rem}
+.easy-nums span b{font-size:1.05rem}
+
 /* ---------- comparison columns ---------- */
 .col h3{margin-top:0}
 .flow{font-family:var(--mono);font-size:.8rem;background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:10px;margin:10px 0;line-height:1.9}
@@ -226,7 +250,7 @@ details summary{cursor:pointer;color:var(--text-2);font-size:.85rem;margin-top:8
   <div class="wrap">
     <span class="brand">DR-DCI</span>
     <nav class="toc" id="toc" aria-label="섹션">
-      <a href="#problem">문제</a><a href="#dci">DCI 입문</a><a href="#pull">pull 루프</a><a href="#arch">아키텍처</a><a href="#reset">컨텍스트 리셋</a><a href="#results">메인 결과</a><a href="#scaling">스케일링</a><a href="#wiki">Wiki-18</a><a href="#ablation">어블레이션</a><a href="#related">관련 연구</a><a href="#guide">재현 가이드</a><a href="#limits">한계·인용</a>
+      <a href="#easy">쉽게 보기</a><a href="#problem">문제</a><a href="#dci">DCI 입문</a><a href="#pull">pull 루프</a><a href="#arch">아키텍처</a><a href="#reset">컨텍스트 리셋</a><a href="#results">메인 결과</a><a href="#scaling">스케일링</a><a href="#wiki">Wiki-18</a><a href="#ablation">어블레이션</a><a href="#related">관련 연구</a><a href="#guide">재현 가이드</a><a href="#limits">한계·인용</a>
     </nav>
     <button class="theme-btn" id="themeBtn" aria-label="테마 전환">☀︎ / ☾</button>
   </div>
@@ -243,6 +267,60 @@ details summary{cursor:pointer;color:var(--text-2);font-size:.85rem;margin-top:8
     </div>
     <h1>1,000만 문서에서 grep하지 마세요.<br>먼저 끌어오세요.</h1>
     <p class="sub">DR-DCI(arXiv 표기 “Dr-DCI”): <i>Scaling Direct Corpus Interaction via Dynamic Workspace Expansion</i>. 검색을 에이전트가 직접 호출하는 <code>pull(query, topK)</code> 액션으로 바꾸고, 끌어온 워크스페이스 안에서만 <code>rg</code>·<code>grep</code>·<code>read</code>로 증거를 찾고 검증합니다. 별도 학습 없이 GPT-5.4 nano로 추론만 합니다.</p>
+
+    <div class="easy" id="easy" aria-labelledby="easyTitle">
+      <span class="easy-tag">쉽게 말하면</span>
+      <h2 id="easyTitle">도서관에서 숙제할 때를 떠올려 보세요</h2>
+      <p class="lead">질문 하나에 답하려고 1,000만 권짜리 도서관을 뒤져야 한다고 합시다. AI가 자료를 찾는 방식은 크게 세 가지입니다.</p>
+      <div class="easy-cols">
+        <div class="easy-col">
+          <h3>① RAG</h3>
+          <div class="who">“사서가 발췌본만 복사해 줌”</div>
+          <ol>
+            <li>사서에게 질문을 건넨다 (검색)</li>
+            <li>사서가 관련 있어 보이는 책 <b>5권의 몇 문단만</b> 복사해 준다</li>
+            <li>AI는 그 <b>복사본만 보고</b> 답한다</li>
+          </ol>
+          <div class="verdict"><span class="good">빠르다.</span> 하지만 <span class="bad">복사본에 없는 내용은 확인할 방법이 없고</span>, 두 책을 펼쳐 놓고 대조하는 것도 못 한다.</div>
+        </div>
+        <div class="easy-col">
+          <h3>② Raw DCI</h3>
+          <div class="who">“서가 전체를 직접 Ctrl+F”</div>
+          <ol>
+            <li>사서 없이 AI가 <b>서가에 직접 들어간다</b></li>
+            <li>모든 책에 Ctrl+F(<code>grep</code>)를 돌리고, 필요한 페이지를 직접 펼쳐 읽는다</li>
+            <li>여러 책을 가로질러 조건을 조합해 검증한다</li>
+          </ol>
+          <div class="verdict"><span class="good">정확하다.</span> 하지만 도서관이 커지면 <span class="bad">검색 한 번이 끝나지 않는다</span>(시간 초과, 결과 폭주).</div>
+        </div>
+        <div class="easy-col me">
+          <h3>③ DR-DCI <span style="color:var(--accent-ink);font-size:.8rem">← 이 논문</span></h3>
+          <div class="who">“책을 내 책상으로 가져온 뒤 Ctrl+F”</div>
+          <ol>
+            <li>사서에게 “관련 있어 보이는 책 <b>500권을 내 책상에</b> 갖다 줘” (<code>pull</code>)</li>
+            <li><b>책상 위 책에서만</b> Ctrl+F·정독으로 증거를 찾는다 (<code>rg</code>, <code>read</code>)</li>
+            <li>새 단서가 생기면 “이것 관련 책 더” → 책상이 넓어진다</li>
+          </ol>
+          <div class="verdict">사서의 <span class="good">넓은 탐색</span> + 직접 뒤지는 <span class="good">정밀함</span>. 도서관이 100배 커져도 책상은 ~1,000권 수준으로 유지된다.</div>
+        </div>
+      </div>
+      <div class="easy-key">
+        <div class="k"><b class="hl">RAG와의 결정적 차이</b><br>RAG에서는 검색 결과가 곧 <b>답의 재료</b>입니다. DR-DCI에서는 검색 결과가 <b>뒤질 범위(작업 공간)</b>일 뿐이고, 답의 근거는 AI가 그 안에서 직접 찾아 확인합니다. 그래서 저자들은 “검색은 상호작용을 대체하지 말고, 조종해야 한다”고 말합니다.</div>
+        <div class="k"><b class="hl">그래서 얼마나 다른가</b> <span class="src">Table 12 · BCP-100</span>
+          <div class="easy-nums">
+            <span>코퍼스 10만 문서</span>
+          </div>
+          <div class="easy-nums">
+            <span>RAG식 검색 <b>38</b></span><span>Raw DCI <b>67</b></span><span style="color:var(--accent-ink)">DR-DCI <b>80</b></span>
+          </div>
+          <div class="easy-nums" style="margin-top:8px"><span>코퍼스 80만 문서</span></div>
+          <div class="easy-nums">
+            <span>RAG식 검색 <b>53</b></span><span>Raw DCI <b>29</b></span><span style="color:var(--accent-ink)">DR-DCI <b>72</b></span>
+          </div>
+          <div class="muted" style="font-size:.75rem;margin-top:6px">100문항 중 정답 수. “RAG식 검색”은 BM25 top-5 스니펫(결과당 512토큰)만 받는 공식 기준선입니다.</div>
+        </div>
+      </div>
+    </div>
     <p class="authors">Yi Lu*†, Zhuofeng Li*, Ping Nie†, Haoxiang Zhang, Yuyu Zhang, Kai Zou, Wenhu Chen, Jimmy Lin, Dongfu Jiang⊠, Yu Zhang⊠ — University of Toronto · Texas A&amp;M · University of Waterloo · UC San Diego · Verdent AI · Netmind AI<br>(*공동 1저자, †프로젝트 리드, ⊠교신저자)</p>
     <div class="hero-stats">
       <div class="stat"><div class="v" data-count="71.2" data-suffix="%">71.2%</div><div class="k">BrowseComp-Plus 830문항 정확도 · Raw-DCI 62.9% 대비 +8.3pt <span class="src">Table 1</span></div></div>
