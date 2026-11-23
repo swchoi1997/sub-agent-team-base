@@ -1,0 +1,1679 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jev System One 학습</title>
+<meta name="description" content="TypeSafe AI의 판단 모델 Jev: System One 원리, 빠른 판단의 비결, 판단 예제를 인터랙티브로 학습하는 페이지">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+  try { const t = localStorage.getItem('jev-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<style>
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --surface-2:#eef1f6; --surface-3:#e3e8f0;
+  --text:#18202b; --muted:#5b6676; --border:#d7dde6;
+  --accent:#2f5bea; --accent-soft:#e3eaff; --accent-2:#0f9d8a; --accent-2-soft:#d8f3ee;
+  --good:#15803d; --good-soft:#dcf5e3; --warn:#b45309; --warn-soft:#fdf0d8; --bad:#c2410c; --bad-soft:#fde4d8;
+  --code-bg:#0f1726; --code-text:#dbe4f3; --code-kw:#8fb4ff; --code-str:#9be3b5; --code-com:#7b8aa3; --code-num:#f5c27a;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c1118; --surface:#131a24; --surface-2:#1a2330; --surface-3:#243041;
+    --text:#e6ebf2; --muted:#9aa6b6; --border:#2a3646;
+    --accent:#7b9cff; --accent-soft:#1d2a4d; --accent-2:#3fd1bb; --accent-2-soft:#123632;
+    --good:#4ade80; --good-soft:#123321; --warn:#fbbf24; --warn-soft:#3a2c0e; --bad:#fb923c; --bad-soft:#3d2112;
+    --code-bg:#0a0f17; --code-text:#d6deeb; --code-kw:#8fb4ff; --code-str:#9be3b5; --code-com:#6b7a93; --code-num:#f5c27a;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c1118; --surface:#131a24; --surface-2:#1a2330; --surface-3:#243041;
+  --text:#e6ebf2; --muted:#9aa6b6; --border:#2a3646;
+  --accent:#7b9cff; --accent-soft:#1d2a4d; --accent-2:#3fd1bb; --accent-2-soft:#123632;
+  --good:#4ade80; --good-soft:#123321; --warn:#fbbf24; --warn-soft:#3a2c0e; --bad:#fb923c; --bad-soft:#3d2112;
+  --code-bg:#0a0f17; --code-text:#d6deeb; --code-kw:#8fb4ff; --code-str:#9be3b5; --code-com:#6b7a93; --code-num:#f5c27a;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:16px;line-height:1.75;word-break:keep-all;overflow-wrap:anywhere}
+a{color:var(--accent)}
+code,kbd,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em}
+p code,li code,td code{background:var(--surface-2);border:1px solid var(--border);padding:.05em .35em;border-radius:6px}
+td code{white-space:nowrap}
+@media (max-width:520px){.topbar .chip{display:none}}
+h1,h2,h3,h4{line-height:1.3;letter-spacing:-.01em}
+h2{font-size:1.6rem;margin:0 0 .4rem}
+h3{font-size:1.18rem;margin:2rem 0 .6rem}
+h4{font-size:1rem;margin:1.2rem 0 .4rem}
+
+/* layout */
+.topbar{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1240px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+.brand{font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text)}
+.brand-dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+.topbar .spacer{flex:1}
+.progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:0}
+.btn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:10px;padding:7px 12px;font:inherit;font-size:.9rem;cursor:pointer;line-height:1.3}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] .btn.primary{color:#0c1118}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.primary{color:#0c1118}}
+.btn.small{padding:4px 9px;font-size:.82rem;border-radius:8px}
+.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.layout{max-width:1240px;margin:0 auto;padding:0 16px;display:grid;grid-template-columns:1fr;gap:32px}
+@media (min-width:1100px){.layout{grid-template-columns:240px minmax(0,1fr)}}
+.toc{display:none}
+@media (min-width:1100px){
+  .toc{display:block;position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;padding:24px 0}
+}
+.toc h4{margin:0 0 8px;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.toc a{display:block;padding:5px 10px;border-left:2px solid var(--border);color:var(--muted);text-decoration:none;font-size:.9rem;line-height:1.45}
+.toc a.active{border-left-color:var(--accent);color:var(--text);font-weight:700}
+.toc-mobile{margin:16px 0 0}
+@media (min-width:1100px){.toc-mobile{display:none}}
+.toc-mobile summary{cursor:pointer;font-weight:700}
+.toc-mobile ol{margin:.4rem 0 0;padding-left:1.2rem;columns:2;column-gap:24px;font-size:.92rem}
+@media (max-width:520px){.toc-mobile ol{columns:1}}
+main{min-width:0;padding-bottom:80px}
+
+/* hero */
+.hero{padding:40px 0 12px}
+.eyebrow{display:inline-flex;gap:8px;align-items:center;font-size:.82rem;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.hero h1{font-size:clamp(1.9rem,4.6vw,3rem);margin:.4rem 0 .6rem;letter-spacing:-.03em}
+.hero h1 .grad{background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .lead{font-size:1.1rem;color:var(--muted);max-width:780px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+.chip{display:inline-flex;flex-wrap:wrap;max-width:100%;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:3px 11px;font-size:.82rem;color:var(--muted)}
+
+/* section */
+section.sec{padding:40px 0 8px;border-top:1px solid var(--border);margin-top:32px;scroll-margin-top:64px}
+.sec-num{font-family:"JetBrains Mono",monospace;color:var(--accent);font-size:.85rem;font-weight:600}
+.sec-intro{color:var(--muted);max-width:800px;margin:0 0 1rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.card + .card{margin-top:16px}
+.grid-2{display:grid;grid-template-columns:1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:760px){.grid-2{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:repeat(3,1fr)}}
+.widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin:18px 0;box-shadow:var(--shadow)}
+.widget-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.widget-head h4{margin:0;flex:1;min-width:200px}
+.widget-label{font-size:.72rem;font-weight:800;letter-spacing:.08em;color:var(--accent-2);text-transform:uppercase}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+.center{text-align:center}
+
+/* callouts */
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--surface);border-radius:10px;padding:12px 16px;margin:16px 0}
+.callout.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.callout.good{border-left-color:var(--good);background:var(--good-soft)}
+.callout.info{border-left-color:var(--accent);background:var(--accent-soft)}
+.callout p{margin:.2rem 0}
+.callout strong:first-child{display:block;margin-bottom:2px}
+
+/* tags */
+.tag{display:inline-block;font-size:.7rem;font-weight:800;padding:1px 7px;border-radius:6px;vertical-align:.12em;letter-spacing:.02em;white-space:nowrap;border:1px solid transparent}
+.tag.official{background:var(--good-soft);color:var(--good);border-color:color-mix(in srgb,var(--good) 30%,transparent)}
+.tag.observed{background:var(--accent-soft);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.tag.inferred{background:var(--warn-soft);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.tag.self{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 30%,transparent)}
+.tag.repro{background:var(--accent-2-soft);color:var(--accent-2);border-color:color-mix(in srgb,var(--accent-2) 30%,transparent)}
+.tag.illus{background:var(--surface-2);color:var(--muted);border-color:var(--border)}
+
+/* tables */
+.table-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+
+/* tldr */
+.tldr{display:grid;grid-template-columns:1fr;gap:14px}
+@media (min-width:860px){.tldr{grid-template-columns:repeat(3,1fr)}}
+.tldr .card h3{margin:0 0 6px;font-size:1.05rem;display:flex;gap:8px;align-items:center}
+.tldr .card .ico{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:.9rem}
+.tldr .card p{margin:0;font-size:.94rem}
+
+/* bars */
+.bars{display:grid;gap:6px}
+.bar-row{display:grid;grid-template-columns:minmax(84px,120px) 1fr 52px;gap:10px;align-items:center;font-size:.88rem}
+.bar-row .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{height:12px;background:var(--surface-2);border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+.bar-fill{height:100%;width:0;background:var(--accent);border-radius:999px;transition:width .45s cubic-bezier(.2,.8,.2,1)}
+.bar-fill.top{background:var(--accent-2)}
+.bar-row .val{font-family:"JetBrains Mono",monospace;font-size:.82rem;text-align:right}
+
+/* demo LLM vs Jev */
+.versus{display:grid;grid-template-columns:1fr;gap:14px}
+@media (min-width:760px){.versus{grid-template-columns:1fr 1fr}}
+.pane{border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--surface-2);min-height:230px;display:flex;flex-direction:column}
+.pane-head{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:8px;gap:8px}
+.timer{font-family:"JetBrains Mono",monospace;font-size:.82rem;color:var(--muted)}
+.typed{font-family:"JetBrains Mono",monospace;font-size:.8rem;white-space:pre-wrap;margin:0;flex:1;color:var(--text)}
+.caret{display:inline-block;width:7px;height:1em;background:var(--accent);vertical-align:-.15em;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.jev-q{margin:0 0 10px}
+.jev-q .qname{font-family:"JetBrains Mono",monospace;font-size:.8rem;color:var(--muted)}
+.ticket{font-style:italic;background:var(--surface);border:1px dashed var(--border);border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:.95rem}
+
+/* sort game */
+.game-cards{display:grid;gap:10px}
+.gcard{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--surface-2)}
+.gcard .gtext{flex:1;min-width:200px}
+.gcard .gbtns{display:flex;gap:6px}
+.gcard.correct{border-color:var(--good);background:var(--good-soft)}
+.gcard.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.gcard .gfeedback{flex-basis:100%;font-size:.86rem;color:var(--muted);display:none}
+.gcard.correct .gfeedback,.gcard.wrong .gfeedback{display:block}
+.score-pill{font-family:"JetBrains Mono",monospace;font-weight:700;background:var(--accent-soft);color:var(--accent);padding:2px 10px;border-radius:999px;font-size:.85rem}
+
+/* diagram */
+.diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin:16px 0;overflow-x:auto;box-shadow:var(--shadow)}
+.diagram .mm-out{display:flex;justify-content:center;min-height:60px}
+.diagram .mm-out svg{max-width:100%;height:auto}
+.diagram .mm-fallback{font-family:"JetBrains Mono",monospace;font-size:.78rem;white-space:pre;color:var(--muted)}
+.diagram figcaption{font-size:.85rem;color:var(--muted);margin-top:8px;text-align:center}
+
+/* mask grid */
+.mask-controls{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.mask-wrap{overflow-x:auto}
+.mask-grid{display:grid;gap:3px;min-width:340px;max-width:440px}
+.mask-grid .mh{font-family:"JetBrains Mono",monospace;font-size:.7rem;color:var(--muted);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1}
+.mask-grid .mh.row{justify-content:flex-end;padding-right:6px}
+.mcell{aspect-ratio:1;border-radius:5px;border:1px solid var(--border);cursor:pointer;background:var(--surface-2);transition:background .2s}
+.mcell.on{background:var(--accent);border-color:var(--accent)}
+.mcell.focus{outline:2px solid var(--accent-2);outline-offset:1px}
+.mask-info{margin-top:10px;font-size:.9rem;min-height:3em;background:var(--surface-2);border-radius:10px;padding:8px 12px}
+
+/* sliders */
+.ctrl{display:grid;grid-template-columns:minmax(70px,110px) 1fr 52px;gap:10px;align-items:center;margin:6px 0;font-size:.9rem}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.out-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.stat{flex:1;min-width:130px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.stat .k{font-size:.76rem;color:var(--muted);font-weight:700}
+.stat .v{font-family:"JetBrains Mono",monospace;font-size:1.35rem;font-weight:600}
+.stat .v.good{color:var(--good)} .stat .v.warn{color:var(--warn)} .stat .v.bad{color:var(--bad)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+
+/* math */
+.math{overflow-x:auto;overflow-y:hidden;padding:4px 0;margin:10px 0}
+mjx-container[display="true"]{margin:.6em 0 !important}
+
+/* code */
+.code{margin:16px 0;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:color-mix(in srgb,var(--code-bg) 80%,#fff 6%);color:var(--code-com);font-size:.8rem;font-family:"JetBrains Mono",monospace}
+.code-head .t{flex:1;color:var(--code-text)}
+.code-head button{background:transparent;border:1px solid #33435c;color:var(--code-text);border-radius:7px;padding:2px 9px;font:inherit;font-size:.75rem;cursor:pointer}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-text);font-family:"JetBrains Mono",monospace;font-size:.8rem;line-height:1.6;tab-size:2}
+.tok-kw{color:var(--code-kw)} .tok-str{color:var(--code-str)} .tok-com{color:var(--code-com);font-style:italic} .tok-num{color:var(--code-num)}
+.console{background:var(--code-bg);color:var(--code-str);font-family:"JetBrains Mono",monospace;font-size:.8rem;padding:12px 14px;border-radius:10px;white-space:pre-wrap;min-height:3em;margin-top:8px}
+
+/* stepper */
+.stepper-nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.step-btn{display:flex;align-items:center;gap:6px}
+.step-btn .n{width:20px;height:20px;border-radius:999px;background:var(--surface-3);display:grid;place-items:center;font-size:.72rem;font-weight:800}
+.step-btn[aria-pressed="true"] .n{background:var(--accent);color:#fff}
+.step-body{display:grid;grid-template-columns:1fr;gap:14px}
+@media (min-width:860px){.step-body{grid-template-columns:1.1fr 1fr}}
+.json{background:var(--code-bg);color:var(--code-text);border-radius:10px;padding:12px 14px;font-family:"JetBrains Mono",monospace;font-size:.76rem;white-space:pre;overflow-x:auto;margin:0}
+details.fold{border:1px solid var(--border);border-radius:10px;padding:8px 12px;background:var(--surface-2);margin:8px 0}
+details.fold summary{cursor:pointer;font-weight:700;font-size:.9rem}
+.route-badge{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:800;font-size:.8rem}
+.route-auto{background:var(--good-soft);color:var(--good)}
+.route-confirm{background:var(--warn-soft);color:var(--warn)}
+.route-escalate{background:var(--bad-soft);color:var(--bad)}
+
+/* chart svg */
+.chart svg{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-size:11px;font-family:"Noto Sans KR",sans-serif}
+.chart .axis{stroke:var(--border)}
+.chart .diag{stroke:var(--muted);stroke-dasharray:4 4}
+.chart .bin{fill:var(--accent);opacity:.85}
+.chart .gap{fill:var(--bad);opacity:.35}
+.chart .l1{stroke:var(--accent);fill:none;stroke-width:2.2}
+.chart .l2{stroke:var(--accent-2);fill:none;stroke-width:2.2}
+.chart .marker{stroke:var(--text);stroke-dasharray:3 3}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+
+/* race */
+.race{display:grid;gap:10px}
+.race-row{display:grid;grid-template-columns:1fr;gap:4px}
+@media (min-width:760px){.race-row{grid-template-columns:260px 1fr}}
+.race-row .rl{font-size:.86rem}
+.race-track{height:22px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;overflow:hidden;position:relative}
+.race-fill{height:100%;width:0;background:var(--accent);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+.race-fill.gen{background:var(--bad)}
+.race-fill.ndm{background:var(--accent-2)}
+.race-val{position:absolute;right:8px;top:0;bottom:0;display:flex;align-items:center;font-family:"JetBrains Mono",monospace;font-size:.76rem}
+.race-scale{display:flex;justify-content:space-between;font-family:"JetBrains Mono",monospace;font-size:.7rem;color:var(--muted)}
+@media (min-width:760px){.race-scale{margin-left:270px}}
+
+/* tree */
+.tree svg{width:100%;max-width:640px;height:auto;display:block;margin:0 auto}
+.tree .edge{stroke:var(--border);stroke-width:2.5}
+.tree .edge.hl{stroke:var(--accent-2);stroke-width:4}
+.tree .edge.kept{stroke:var(--accent);stroke-width:3;stroke-dasharray:6 4}
+.tree .node rect{fill:var(--surface-2);stroke:var(--border);stroke-width:1.5}
+.tree .node.hl rect{fill:var(--accent-2-soft);stroke:var(--accent-2);stroke-width:2.5}
+.tree .node.kept rect{stroke:var(--accent);stroke-width:2}
+.tree text{fill:var(--text);font-size:13px;font-family:"Noto Sans KR",sans-serif}
+.tree .ep{fill:var(--muted);font-size:12px;font-family:"JetBrains Mono",monospace}
+
+/* compare cards */
+.cmp{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:760px){.cmp{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1180px){.cmp{grid-template-columns:repeat(3,1fr)}}
+.cmp .card h4{margin:0 0 4px;font-size:1.02rem}
+.cmp .card .form{font-size:.8rem;color:var(--muted);font-weight:700}
+.cmp .card p{font-size:.9rem;margin:.5rem 0 0}
+.cmp .card.jepa{border-style:dashed}
+
+/* checklist */
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:10px}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:start;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+ol.steps li::before{content:counter(s);width:30px;height:30px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800}
+
+/* quiz */
+.quiz{display:grid;gap:14px}
+.qcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.qcard .qtitle{font-weight:700;margin-bottom:8px}
+.qopts{display:grid;gap:6px}
+.qopt{text-align:left;width:100%}
+.qopt.correct{border-color:var(--good);background:var(--good-soft);color:var(--good);font-weight:700}
+.qopt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.qexp{display:none;margin-top:8px;font-size:.9rem;color:var(--muted)}
+.qcard.done .qexp{display:block}
+
+/* glossary */
+.gloss{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:760px){.gloss{grid-template-columns:repeat(2,1fr)}}
+.gloss details{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px}
+.gloss summary{cursor:pointer;font-weight:700}
+.gloss p{margin:.4rem 0 0;font-size:.92rem;color:var(--muted)}
+
+/* sandbox */
+.sb-q{display:grid;grid-template-columns:1fr;gap:8px;border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--surface-2);margin:10px 0}
+@media (min-width:760px){.sb-q{grid-template-columns:120px 130px 1fr auto}}
+.sb-q input[type=text],.sb-q select,textarea{width:100%;font:inherit;font-size:.9rem;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)}
+textarea{min-height:70px;resize:vertical}
+.sb-q label{font-size:.82rem;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.sb-results{display:grid;gap:12px;margin-top:12px}
+.sb-res{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--surface)}
+.sb-res .h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;font-weight:700}
+
+.refs li{margin:4px 0}
+footer{border-top:1px solid var(--border);padding:24px 16px 40px;color:var(--muted);font-size:.86rem;text-align:center}
+.kbd-sep{opacity:.5}
+ul.tight{margin:.3rem 0;padding-left:1.2rem}
+ul.tight li{margin:.2rem 0}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#top"><span class="brand-dot" aria-hidden="true"></span>Jev 학습 노트</a>
+    <span class="spacer"></span>
+    <span class="chip small" title="원고 자료 기준 시점">자료 기준 2026-11</span>
+    <button class="btn small" id="themeBtn" type="button" aria-label="라이트/다크 전환">◐ 테마</button>
+  </div>
+  <div class="progress" id="progress"></div>
+</header>
+
+<div class="layout" id="top">
+  <nav class="toc" aria-label="목차">
+    <h4>목차</h4>
+    <a href="#s0">TL;DR</a>
+    <a href="#s1">1. Jev는 무엇인가</a>
+    <a href="#s2">2. System 1 vs System 2</a>
+    <a href="#s3">3. 아키텍처</a>
+    <a href="#s4">4. 수식</a>
+    <a href="#s5">5. 빠른 판단의 비결</a>
+    <a href="#s6">6. 판단 예제</a>
+    <a href="#s7">7. 다른 모델과 비교</a>
+    <a href="#s8">8. 권장 사항</a>
+    <a href="#s9">9. 주의 사항</a>
+    <a href="#s10">10. 요약 · 퀴즈 · 샌드박스</a>
+    <a href="#s11">11. 참고 자료</a>
+  </nav>
+
+  <main>
+    <!-- HERO -->
+    <div class="hero">
+      <div class="eyebrow">TypeSafe AI · System One Model · ERP 개발자용 학습 페이지</div>
+      <h1><span class="grad">Jev</span>: 텍스트 대신 <br>“보정된 판단”을 돌려주는 모델</h1>
+      <p class="lead">상태(state)와 타입이 정해진 질문들을 받아, <b>정해진 선택지 중 하나</b>와 <b>보정된 확률</b>을 한 번의 병렬 패스로 돌려주는 판단 전용 모델. 원리, 빠른 이유, 실무 설계 패턴을 직접 만져 보며 익힌다.</p>
+      <div class="meta-row">
+        <span class="chip">대상: ERP 개발 경험이 있는 개발자</span>
+        <span class="chip">버전: jev-1.13.0 → Jev 1.14</span>
+        <span class="chip">근거 표시:
+          <span class="tag official">공식</span>
+          <span class="tag observed">관측</span>
+          <span class="tag inferred">추정</span>
+          <span class="tag repro">공개 재현</span>
+          <span class="tag self">자체 평가</span>
+          <span class="tag illus">예시·가정</span>
+        </span>
+      </div>
+      <div class="callout info">
+        <strong>이름부터 정리</strong>
+        <p>“타입스크립트에서 낸 jev”는 <b>TypeSafe AI</b>(회사명)의 <b>Jev</b>를 가리킨다. 회사명과 공식 TypeScript SDK(<code>@typesafe-ai/sdk</code>)가 함께 소개되다 보니 헷갈리기 쉽다. Microsoft TypeScript 팀이 낸 “jev” 모델은 확인되지 않는다. LeCun의 <b>JEPA</b>도 이름만 비슷한 별개 계열이다.</p>
+      </div>
+      <details class="toc-mobile card">
+        <summary>목차 열기</summary>
+        <ol>
+          <li><a href="#s0">TL;DR</a></li>
+          <li><a href="#s1">Jev는 무엇인가</a></li>
+          <li><a href="#s2">System 1 vs System 2</a></li>
+          <li><a href="#s3">아키텍처</a></li>
+          <li><a href="#s4">수식</a></li>
+          <li><a href="#s5">빠른 판단의 비결</a></li>
+          <li><a href="#s6">판단 예제</a></li>
+          <li><a href="#s7">다른 모델과 비교</a></li>
+          <li><a href="#s8">권장 사항</a></li>
+          <li><a href="#s9">주의 사항</a></li>
+          <li><a href="#s10">요약 · 퀴즈 · 샌드박스</a></li>
+          <li><a href="#s11">참고 자료</a></li>
+        </ol>
+      </details>
+    </div>
+
+    <!-- TL;DR -->
+    <section class="sec" id="s0">
+      <div class="sec-num">00</div>
+      <h2>TL;DR</h2>
+      <div class="tldr">
+        <div class="card">
+          <h3><span class="ico">?</span>무엇인가</h3>
+          <p>TypeSafe AI의 <b>비생성형 판단 모델</b>. 입력은 <code>state</code>(텍스트·JSON, 1.14부터 이미지)와 <code>questions</code>(Choice·Score·Noul·Box). 출력은 미리 정한 선택지 중 하나와 선택지별 확률, confidence다. 텍스트를 만들지 않으니 <b>타입 오류와 파싱 실패가 원천적으로 없다</b>.</p>
+        </div>
+        <div class="card">
+          <h3><span class="ico">⚡</span>왜 빠른가</h3>
+          <p>토큰 디코드 루프가 없다. 상태를 <b>한 번 인코딩</b>하고, 모든 질문을 <b>격리된 가지로 병렬 평가</b>해 확률 헤드에서 바로 읽는다. 응답 70–500ms, 입력 100만 토큰당 $0.042, 출력 무료 <span class="tag official">공식</span>. 학습은 확률이 실제 적중률과 맞도록 하는 <b>RLCD</b>로 한다(세부 비공개).</p>
+        </div>
+        <div class="card">
+          <h3><span class="ico">→</span>어떻게 쓰나</h3>
+          <p>Jev는 <b>System 1(빠른 직관)</b> 역할만 맡는다. 판단은 원자적 질문으로 쪼개고, 결합·규칙·계산은 코드로 처리하고, confidence가 낮으면 사람이나 LLM(System 2)으로 넘긴다. 이 <b>라우팅 구조</b>가 핵심이다. 독립 평가에서는 강점(제로샷 95–99%)과 약점(yes/no를 맞바꾸면 50.5% 뒤집힘)이 함께 보고됐다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1 -->
+    <section class="sec" id="s1">
+      <div class="sec-num">01</div>
+      <h2>개요: Jev는 무엇인가</h2>
+      <p class="sec-intro">LLM은 사람이 읽을 텍스트를 만들도록 설계됐다. 코드가 소비할 판단을 LLM에 맡기면 텍스트를 구조로 억지로 바꾸고 다시 파싱해야 한다. Jev는 이 불일치를 없애려고 만든 모델이다. 창업자는 Jev를 <b>“프런티어 지능 함수 호출(frontier-intelligence function call)”</b>이라고 부른다.</p>
+
+      <h3>1.1 정체 확인</h3>
+      <div class="table-wrap"><table>
+        <tr><th>항목</th><th>내용</th></tr>
+        <tr><td>개발사</td><td>TypeSafe AI (샌프란시스코, 2024년 설립)</td></tr>
+        <tr><td>창업자</td><td>Diogo Almeida(CEO, OpenAI에서 RLHF·InstructGPT·ChatGPT 연구), Erik Gafni, Sasha Sheng</td></tr>
+        <tr><td>공개</td><td>2026-09-15 early access. 같은 날 DCVC 주도 $40M 시드 투자 발표(Business Wire)</td></tr>
+        <tr><td>이름 유래</td><td>모델 클래스명은 카너먼 『생각에 관한 생각』의 System 1, “Jev”는 제번스의 역설(William Stanley Jevons)</td></tr>
+        <tr><td>버전</td><td>jev-1.13.0(최초) → Jev 1.14(2026-10-14, 이미지 입력과 Box 추가)</td></tr>
+        <tr><td>접근</td><td><code>POST https://api.typesafe.ai/v1/systemone</code>, OpenRouter Decisions API, Python <code>typesafe-sdk</code>, TypeScript <code>@typesafe-ai/sdk</code></td></tr>
+        <tr><td>공개 여부</td><td>가중치·논문 비공개(독점 모델)</td></tr>
+      </table></div>
+
+      <h3>1.2 ERP 개발자를 위한 비유</h3>
+      <div class="grid-2">
+        <div class="card"><h4 style="margin-top:0">LLM = 자유 서술형 결재 의견</h4><p class="small" style="margin:0">내용은 풍부하지만, 시스템이 받으려면 파싱해야 한다. 형식이 틀리면 재시도해야 한다.</p></div>
+        <div class="card"><h4 style="margin-top:0">Jev = 코드값(enum)으로만 답하는 결재 단계</h4><p class="small" style="margin:0">선택지는 마스터 테이블처럼 미리 정의되고, 코드값마다 “확신도”가 붙는다. 시스템은 이 값으로 <code>IF</code>/<code>CASE</code> 분기, 정렬, 큐 라우팅을 한다. 공식 블로그 표현으로는 <b>“smart if-statements”</b>다.</p></div>
+      </div>
+
+      <div class="widget" id="vsDemo">
+        <div class="widget-head">
+          <span class="widget-label">인터랙티브</span>
+          <h4>같은 고객 문의, 두 가지 처리 방식</h4>
+          <button class="btn primary small" id="vsRun" type="button">▶ 실행</button>
+        </div>
+        <p class="ticket">“Hi, I was charged twice for my Pro subscription this month. Please fix this before my next payroll run on Friday.”</p>
+        <div class="versus">
+          <div class="pane">
+            <div class="pane-head"><span>LLM (생성형)</span><span class="timer" id="vsLlmT">0 토큰</span></div>
+            <pre class="typed" id="vsLlm"><span class="muted">▶ 실행을 누르면 토큰이 하나씩 생성된다.</span></pre>
+          </div>
+          <div class="pane">
+            <div class="pane-head"><span>Jev (System One)</span><span class="timer" id="vsJevT">대기</span></div>
+            <div id="vsJev"><p class="muted small" style="margin:0">▶ 실행을 누르면 확률 분포가 한 번에 나온다.</p></div>
+          </div>
+        </div>
+        <p class="small muted" style="margin:10px 0 0">속도는 연출이다(실측 아님). Jev 쪽 수치는 OpenRouter 블로그(2026-10-16)에 실린 jev-1.14 실제 응답이다 <span class="tag observed">관측</span>.</p>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="sec" id="s2">
+      <div class="sec-num">02</div>
+      <h2>배경: System 1 vs System 2</h2>
+      <p class="sec-intro">카너먼의 이중 처리 이론에서 <b>System 1</b>은 빠르고 자동적이며 직관적인 판단이고, <b>System 2</b>는 느리고 노력이 드는 숙고형 추론이다. TypeSafe의 주장은 이렇다. 소프트웨어 안의 판단 대부분은 “어느 버킷인가?”, “긴급한가?” 같은 System 1형 판단인데, 지금까지는 System 2(추론형 LLM)를 빌려 와 그 일을 시켜 왔다.</p>
+      <div class="callout warn">
+        <strong>회사 주장, 근거 미공개</strong>
+        <p>“System 1은 오류가 잦다는 함의가 있지만, System One 모델은 대안보다 더 신뢰성 있게 만들 수 있다”는 주장의 근거는 아직 공개되지 않았다.</p>
+      </div>
+
+      <h3>2.1 Jev 설계에서 System 1이 뜻하는 것</h3>
+      <p>공식 문서의 기준은 이렇다. 각 질문은 <b>“올바른 맥락이 주어졌을 때 해당 분야 전문가가 몇 초 안에 내릴 수 있는 직감 판단(gut-check)”</b>이어야 한다. 긴 추론이 필요하거나 독립 요인 여러 개를 저울질해야 하는 질문은 <b>분해</b>해서 요인별로 따로 묻고, 결합은 코드로 한다.</p>
+      <div class="table-wrap"><table>
+        <tr><th>구분</th><th>System 1 (Jev)</th><th>System 2 (추론형 LLM / 사람)</th></tr>
+        <tr><td>출력</td><td>타입이 정해진 값 + 확률</td><td>자유 텍스트, 추론 과정</td></tr>
+        <tr><td>속도</td><td>70–500ms <span class="tag official">공식</span></td><td>공식 비교 기준 3–329초</td></tr>
+        <tr><td>잘하는 일</td><td>분류, 라우팅, 검증, 게이팅, 랭킹</td><td>작문, 코드 생성, 다단계 추론</td></tr>
+        <tr><td>못하는 일</td><td>정확한 산술·날짜 계산, 다단계 간접 추론</td><td>대량·저지연·저비용 판단</td></tr>
+        <tr><td>불확실성</td><td>숫자로 반환되어 임계값 적용 가능</td><td>문장 속에 숨어 있음</td></tr>
+      </table></div>
+
+      <div class="widget">
+        <div class="widget-head">
+          <span class="widget-label">분류 게임</span>
+          <h4>이 판단은 어디에 맡길까?</h4>
+          <span class="score-pill" id="gameScore">0 / 0</span>
+          <button class="btn small" id="gameReset" type="button">다시</button>
+        </div>
+        <p class="small muted" style="margin-top:0">각 카드를 <b>S1(Jev)</b>, <b>S2(LLM·사람)</b>, <b>코드(결정론)</b> 중 하나로 분류해 보자.</p>
+        <div class="game-cards" id="gameCards"></div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="sec" id="s3">
+      <div class="sec-num">03</div>
+      <h2>아키텍처</h2>
+      <p class="sec-intro">Jev 내부는 비공개다. 아래 내용은 <b>무엇이 공식이고 무엇이 추론인지</b>를 구분해서 읽어야 한다.</p>
+
+      <h3>3.1 공식적으로 공개된 것 vs 추론된 것</h3>
+      <div class="card">
+        <p style="margin-top:0"><span class="tag official">공식</span> TypeSafe는 <b>새 모델 아키텍처</b>, 최대 효율을 위한 <b>병렬 샘플러(parallel sampler)</b>, 학습법 <b>RLCD</b>로 이뤄진 “새 스택”을 만들었다고 밝혔다. 샘플링은 “한 번의 쿼리에서 모든 출력을 생성”하고, Jev는 “작지도 않고 LLM도 아니다”라고 했다. 내부 구조는 공개하지 않았다.</p>
+        <p style="margin-bottom:0"><span class="tag inferred">블랙박스 추론</span> 독립 연구자 Archer Hume은 <code>jev-1.13.0</code>에 약 10,000건의 블랙박스 API 호출을 보내 다음을 추론했다(JevDirectory.org 요약 기준). 소스 코드가 아니라 <b>행동 관찰</b>에 근거한 추정이다.</p>
+      </div>
+      <div class="table-wrap"><table>
+        <tr><th>#</th><th>추론</th><th>관측 근거</th></tr>
+        <tr><td>1</td><td><b>확률 읽기 헤드</b>: 최종 은닉 상태 h를 <code>softmax(W·h)</code>로 바로 확률화한다. 디코드 단계는 0이다.</td><td>출력 크기와 무관한 지연 시간</td></tr>
+        <tr><td>2</td><td><b>공유 상태 + 격리된 질문 가지</b></td><td>Q2의 선택지 설명에 비밀 문구를 심으면 다른 질문의 탐지 확률은 0.00이었다. 같은 문구를 공유 state에 넣으면 0.90–0.92로 올랐다.</td></tr>
+        <tr><td>3</td><td><b>인과(causal) 디코더</b></td><td>정답을 알려주는 “참조 카드”의 위치에 따라 정확도가 크게 달라졌다. 양방향 인코더라면 위치가 중요하지 않았을 것이다.</td></tr>
+        <tr><td>4</td><td><b>listwise 선택지</b></td><td>무관한 다섯 번째 선택지를 추가하자 기존 두 선택지의 로그 오즈가 −0.28만큼 이동했다(95% CI −0.36~−0.19). pointwise라면 0이어야 한다.</td></tr>
+        <tr><td>5</td><td><b>prefill 지배 + prefix caching 징후</b>. 희소 MoE 가능성도 있다(미관측).</td><td>29.8k 토큰 state에 질문 1개는 214ms였다. 질문 약 100개까지는 지연이 거의 늘지 않았고, 1,500개는 중앙값 610ms였다.</td></tr>
+        <tr><td>6</td><td><b>output_tokens는 과금용 계산값</b></td><td>255개 선택지 응답이 2,714 출력 토큰으로 과금됐지만, 2개 선택지 응답과 속도가 같았다.</td></tr>
+      </table></div>
+
+      <h3>3.2 데이터 흐름</h3>
+      <figure class="diagram" data-mermaid>
+<script type="text/plain">flowchart LR
+    S["state<br/>(텍스트/JSON/이미지)"] --> ENC["공유 상태 인코딩<br/>(prefill 1회, KV 캐시)"]
+    Q1["Q1: Choice<br/>instructions + criteria"] --> B1
+    Q2["Q2: Score<br/>순서 있는 levels"] --> B2
+    Q3["Q3: Noul<br/>예/아니오 명제"] --> B3
+    ENC --> B1["가지 1<br/>(다른 가지와 격리)"]
+    ENC --> B2["가지 2"]
+    ENC --> B3["가지 3"]
+    B1 --> H1["softmax 헤드<br/>→ p(선택지)"]
+    B2 --> H2["softmax 헤드<br/>→ p(레벨), 기대값"]
+    B3 --> H3["sigmoid<br/>→ P(yes)"]
+    H1 --> OUT["typed answers<br/>+ probabilities + confidence"]
+    H2 --> OUT
+    H3 --> OUT
+    OUT --> CODE["당신의 코드<br/>분기·정렬·라우팅·에스컬레이션"]</script>
+        <div class="mm-out"></div>
+        <figcaption>공식 설명과 Hume의 추론을 합친 개념도. 가지 격리는 공식 설명과 실험으로 뒷받침되지만, KV 캐시와 헤드 형태는 추정이다.</figcaption>
+      </figure>
+
+      <h3>3.3 구성 요소</h3>
+      <div class="table-wrap"><table>
+        <tr><th>모듈</th><th>역할</th><th>근거</th></tr>
+        <tr><td>State</td><td>판단 대상 데이터. 질문에서 JSON 필드명을 백틱으로 참조할 수 있다.</td><td><span class="tag official">공식</span></td></tr>
+        <tr><td>Question</td><td><code>instructions</code>(질문 전문) + <code>criteria</code>(선택지·레벨 설명). <b>질문 ID는 모델에 전달되지 않는다.</b></td><td><span class="tag official">공식 API 레퍼런스</span></td></tr>
+        <tr><td>공유 인코딩</td><td>state를 한 번만 처리한다.</td><td><span class="tag official">공식</span> 구현은 <span class="tag inferred">추정</span></td></tr>
+        <tr><td>격리 가지</td><td>질문끼리 서로 영향을 주지 않는다(context-rot 없음).</td><td><span class="tag official">공식</span> + <span class="tag observed">Hume 실험</span></td></tr>
+        <tr><td>확률 헤드</td><td>선택지별 로짓을 softmax로 확률화한다.</td><td><span class="tag inferred">추정</span></td></tr>
+        <tr><td>응답</td><td><code>choice</code>/<code>score</code>/<code>noul</code>/<code>box</code> + <code>probabilities</code> + <code>confidence</code></td><td><span class="tag official">공식</span></td></tr>
+      </table></div>
+
+      <h3>3.4 오픈 재현: 투명한 아키텍처 예시 (NDM-Block) <span class="tag repro">공개 재현</span></h3>
+      <p>브라질 Softplan 연구진의 <i>Narrow Decision Models</i>(arXiv 2610.25553)는 같은 인터페이스를 공개된 구조로 구현했다.</p>
+      <ul class="tight">
+        <li>요청을 <b>접두사 트리</b>(state → 질문 → 선택지)로 직렬화하고, 양방향 인코더(mmBERT)에 <b>블록 어텐션 마스크</b>를 건다.</li>
+        <li><b>논리적 위치(logical positions)</b>: 형제 선택지들이 같은 위치 번호를 공유하고 서로를 보지 못한다. 그래서 선택지 순서 불변성과 질문 격리가 학습된 성질이 아니라 <b>구조적으로 보장</b>된다.</li>
+        <li>state는 자기 자신만 보므로 KV를 캐시해 정확히 재사용할 수 있다. 상태 인코딩은 256토큰에 6.5ms, 4,096토큰에 59ms였다. 캐시된 state에 질문을 하나 더 붙이는 비용은 0.8–4.9ms였다.</li>
+      </ul>
+      <div class="math">$$M_{tu}=\begin{cases}0 &amp; \text{block}(u)\in\{\text{block}(t)\}\cup\text{anc}(\text{block}(t))\\ -\infty &amp; \text{otherwise}\end{cases}$$</div>
+
+      <div class="widget">
+        <div class="widget-head">
+          <span class="widget-label">인터랙티브</span>
+          <h4>어텐션 마스크 비교: 누가 누구를 볼 수 있나</h4>
+        </div>
+        <div class="mask-controls" role="group" aria-label="마스크 종류">
+          <button class="btn small" data-mask="ndm" aria-pressed="true" type="button">NDM 블록 마스크</button>
+          <button class="btn small" data-mask="hume" aria-pressed="false" type="button">Hume 추정 (가지 격리 + listwise 인과)</button>
+          <button class="btn small" data-mask="none" aria-pressed="false" type="button">격리 없음 (일반 인과 LLM)</button>
+        </div>
+        <div class="mask-wrap"><div class="mask-grid" id="maskGrid"></div></div>
+        <div class="mask-info" id="maskInfo">셀에 마우스를 올리거나 탭하면 설명이 나온다. 행 = 쿼리 토큰(보는 쪽), 열 = 키 토큰(보이는 쪽).</div>
+        <p class="small muted" id="maskNote" style="margin:8px 0 0"></p>
+      </div>
+      <div class="callout warn">
+        <strong>NDM은 “Jev의 내부”가 아니다</strong>
+        <p>Hume의 추론(인과 디코더, 선택지끼리 서로 영향을 주는 listwise)과 NDM-Block(형제 선택지 상호 차단)은 서로 다른 설계다. NDM은 <b>같은 계약을 투명하게 구현한 한 가지 방법</b>으로 이해하면 된다.</p>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="sec" id="s4">
+      <div class="sec-num">04</div>
+      <h2>수식</h2>
+      <p class="sec-intro">Jev 응답의 숫자들이 어떻게 계산되는지, 그리고 그 숫자를 어떻게 해석해야 하는지 정리한다. 슬라이더로 직접 바꿔 보자.</p>
+
+      <h3>4.1 확률 헤드 (Choice)</h3>
+      <div class="math">$$z_i = \mathbf{w}_i^\top \mathbf{h} + b_i,\qquad p_i=\frac{e^{z_i}}{\sum_{j=1}^{K}e^{z_j}},\qquad \hat{y}=\arg\max_i p_i$$</div>
+      <p>선택지가 요청마다 바뀌므로 \(\mathbf{w}_i\)는 고정 가중치가 아니라 <b>선택지 텍스트를 읽어 만든 벡터</b>로 보는 것이 타당하다(Hume 분석 해설의 해석).</p>
+      <ul class="tight">
+        <li>모든 로짓에 같은 상수를 더해도 결과가 같다(shift-invariant).</li>
+        <li>\(\ln(p_i/p_j)=z_i-z_j\). 독립 채점이라면 선택지를 추가해도 이 값은 변하지 않아야 한다. Jev에서 −0.28 이동이 관측된 것이 <b>listwise의 증거</b>다.</li>
+      </ul>
+
+      <h3>4.2 Noul (예/아니오)</h3>
+      <div class="math">$$P(\text{yes}) = \sigma(z)=\frac{1}{1+e^{-z}}$$</div>
+      <p>Noul에는 별도 confidence가 없고 확률 자체가 답이다. 0.5 근처는 “모르겠다”는 뜻이다. 공식 시작 임계값은 <b>yes ≥ 0.7, no ≤ 0.3</b>이고, 그 사이는 사람에게 넘기라고 권한다 <span class="tag official">공식</span>. 같은 척도로 쓰려면 \(\text{conf}=|2p-1|\)로 계산한다.</p>
+
+      <div class="widget">
+        <div class="widget-head"><span class="widget-label">인터랙티브</span><h4>Noul 3구간 라우팅</h4></div>
+        <div class="ctrl"><span>P(yes)</span><input type="range" id="noulP" min="0" max="100" value="82" aria-label="P(yes)"><span class="mono" id="noulPv">0.82</span></div>
+        <div class="out-grid">
+          <div class="stat"><div class="k">판정</div><div class="v" id="noulOut">yes</div></div>
+          <div class="stat"><div class="k">|2p − 1|</div><div class="v" id="noulConf">0.64</div></div>
+          <div class="stat"><div class="k">처리</div><div class="v small" id="noulRoute" style="font-size:1rem"></div></div>
+        </div>
+      </div>
+
+      <h3>4.3 Score (순서형 루브릭)</h3>
+      <p>레벨 \(0..n-1\)(최대 10개)에 대한 분포 \(p_i\)에서 기대값을 점수로 쓴다.</p>
+      <div class="math">$$\text{score}=\sum_{i=0}^{n-1} i\cdot p_i$$</div>
+      <p><b>예</b>: OpenRouter의 실제 호출에서 버그 심각도 확률이 (0, 0.79, 0.21)이었으므로, score = 0.79×1 + 0.21×2 = <b>1.21</b>이다.</p>
+
+      <h3>4.4 confidence 공식 <span class="tag official">공식 문서</span></h3>
+      <p><b>Choice</b> (n개 선택지, 최고 확률 \(p_{\max}\)):</p>
+      <div class="math">$$\text{conf}=\frac{p_{\max}-\frac1n}{1-\frac1n}$$</div>
+      <p>균등 분포면 0, 확신이면 1이다. 최고 확률만 보기 때문에 (0.6, 0.3, 0.1)과 (0.6, 0.2, 0.2)는 둘 다 0.4다.</p>
+
+      <div class="widget">
+        <div class="widget-head"><span class="widget-label">인터랙티브</span><h4>Choice confidence: (3·p<sub>max</sub> − 1) / 2</h4></div>
+        <div class="presets">
+          <button class="btn small" data-cpreset="0.6,0.3,0.1" type="button">(0.6, 0.3, 0.1)</button>
+          <button class="btn small" data-cpreset="0.6,0.2,0.2" type="button">(0.6, 0.2, 0.2)</button>
+          <button class="btn small" data-cpreset="0.88,0.11,0.01" type="button">애매한 티켓 (0.88, 0.11, 0.01)</button>
+          <button class="btn small" data-cpreset="0.34,0.33,0.33" type="button">거의 균등</button>
+        </div>
+        <div id="cSliders"></div>
+        <div class="bars" id="cBars" style="margin-top:10px"></div>
+        <div class="out-grid">
+          <div class="stat"><div class="k">선택 (argmax)</div><div class="v" id="cPick">-</div></div>
+          <div class="stat"><div class="k">p<sub>max</sub></div><div class="v" id="cPmax">-</div></div>
+          <div class="stat"><div class="k">confidence</div><div class="v" id="cConf">-</div></div>
+        </div>
+        <p class="small muted" style="margin:8px 0 0">슬라이더는 원시 가중치다. 합이 1이 되도록 자동으로 정규화된다.</p>
+      </div>
+
+      <p><b>Score</b> (최빈 레벨 m):</p>
+      <div class="math">$$\text{conf}=\max\!\left(0,\;1-\frac{\sum_i p_i\,|i-m|}{\text{MAD}_{\text{unif}}}\right),\quad \text{MAD}_{\text{unif}}=\frac1n\sum_i\left|i-\frac{n-1}{2}\right|$$</div>
+      <p>인접 레벨 사이에서 갈리면 감점이 적고, 양 끝에서 갈리면 감점이 크다. 3레벨에서 (0, 0.5, 0.5)는 0.25, (0.5, 0, 0.5)는 0이다. 공식 예제 (0, 0.57, 0.43)은 \(1-0.43/(2/3)\approx0.35\)다.</p>
+
+      <div class="widget">
+        <div class="widget-head"><span class="widget-label">인터랙티브</span><h4>Score: 이웃 분할 vs 양 끝 분할</h4>
+          <span class="muted small">레벨 수</span>
+          <button class="btn small" data-slevels="3" aria-pressed="false" type="button">3</button>
+          <button class="btn small" data-slevels="5" aria-pressed="true" type="button">5</button>
+        </div>
+        <div class="presets" id="sPresets"></div>
+        <div id="sSliders"></div>
+        <div class="bars" id="sBars" style="margin-top:10px"></div>
+        <div class="out-grid">
+          <div class="stat"><div class="k">score (기대값)</div><div class="v" id="sScore">-</div></div>
+          <div class="stat"><div class="k">최빈 레벨 m</div><div class="v" id="sMode">-</div></div>
+          <div class="stat"><div class="k">confidence</div><div class="v" id="sConf">-</div></div>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <strong>핵심 경고</strong>
+        <p>confidence는 <b>분포가 얼마나 한쪽에 몰렸나</b>를 재는 통계다. “이 답이 맞을 확률”이 아니며, 공식 문서도 둘이 다르다고 명시한다.</p>
+      </div>
+
+      <h3>4.5 보정(calibration)과 평가 지표</h3>
+      <p>보정이란 “0.8이라고 말한 답들 중 약 80%가 맞는” 성질이다. 개별 답이 아니라 <b>집단 단위</b>로만 성립한다.</p>
+      <div class="math">$$\text{ECE}=\sum_{b=1}^{B}\frac{|B_b|}{N}\,\big|\text{acc}(B_b)-\text{conf}(B_b)\big|,\qquad \text{Brier}=\frac1N\sum_n\sum_k (p_{nk}-c_{nk})^2$$</div>
+      <p><span class="tag observed">관측</span> Hume은 MMLU 1,200문항에서 ECE 0.031(0.0313)을 측정했고, 새로 생성한 문제로도 확인했다. 3자리 곱셈은 신뢰도 83%에 정확도 86.7%였고, 문장제는 30%에 32%였다.</p>
+
+      <div class="widget">
+        <div class="widget-head"><span class="widget-label">인터랙티브</span><h4>신뢰도 다이어그램 (reliability diagram)</h4></div>
+        <div class="ctrl"><span>과신 주입 k</span><input type="range" id="relK" min="40" max="300" value="100" aria-label="과신 계수"><span class="mono" id="relKv">1.00</span></div>
+        <div class="grid-2" style="align-items:center">
+          <div class="chart" id="relChart"></div>
+          <div>
+            <div class="out-grid" style="margin-top:0">
+              <div class="stat"><div class="k">ECE</div><div class="v" id="relEce">-</div></div>
+              <div class="stat"><div class="k">상태</div><div class="v small" id="relState" style="font-size:1rem">-</div></div>
+            </div>
+            <p class="small muted">k = 1이면 보정된 모델이다. 막대(실제 정확도)가 대각선(말한 확률)에 붙는다. k &gt; 1이면 <b>과신</b>해서 높은 확률을 말한 구간의 실제 정확도가 그보다 낮다. k &lt; 1이면 과소신뢰다. 빨간 영역이 ECE에 들어가는 간격이다. <span class="tag illus">가상 데이터</span></p>
+          </div>
+        </div>
+      </div>
+
+      <h3>4.6 학습 목표: RLCD (Reinforcement Learning for Calibrated Decisions)</h3>
+      <div class="grid-3">
+        <div class="card"><div class="widget-label">RLHF</div><p class="small" style="margin:.3rem 0 0">사람 <b>선호</b>를 최적화한다.</p></div>
+        <div class="card"><div class="widget-label">RLVR</div><p class="small" style="margin:.3rem 0 0">검증 가능한 <b>정답</b>을 최적화한다.</p></div>
+        <div class="card" style="border-color:var(--accent)"><div class="widget-label">RLCD</div><p class="small" style="margin:.3rem 0 0">“인식적으로 정직한 확률을 가진 판단”을 최적화한다. 확률은 결과(outcome)에 맞춰 최적화된다 <span class="tag official">공식</span>. 예제 형식, 보상 함수, 손실은 <b>비공개</b>다.</p></div>
+      </div>
+      <p><span class="tag repro">공개 재현</span> eve-rlcd 등은 선택지 \(a\sim p\)를 샘플링하고, 정답 여부 \(c_a\in\{0,1\}\)에 대해 \(r_a=c_a-p_a\)를 보상으로 준다. 이때 REINFORCE의 기대 그래디언트는 정확히 Brier 점수 그래디언트의 −1/2배다(NDM 논문 식 3).</p>
+      <div class="math">$$\mathbb{E}_{a\sim p}[r_a\nabla\log p_a]=\sum_a(c_a-p_a)\nabla p_a=-\tfrac12\nabla\sum_a(p_a-c_a)^2$$</div>
+      <ul class="tight">
+        <li><b>왜 “정답=1, 오답=0” 보상이 아닌가</b>: 그런 보상은 정확도만 최적화한다. strictly proper scoring rule이 아니어서 <b>과신하는 모델</b>이 나온다. Brier나 로그 손실 같은 strictly proper scoring rule은 참 확률을 그대로 말할 때만 기대 점수가 최대가 된다.</li>
+        <li><b>오픈 모델 Laya</b>: 로짓에 가우시안 노이즈를 넣어 탐색하고, 보상은 log + spherical(+Score에는 순위 확률 점수 RPS)을 쓴다. 갱신은 그룹 평균 기준선을 쓰는 REINFORCE다.</li>
+        <li>라벨을 이미 아는 경우에는 RL 없이 proper scoring rule을 직접 최소화해도 같은 최적점에 분산 없이 도달한다(NDM 논문의 선택).</li>
+      </ul>
+      <div class="callout warn"><strong>주의</strong><p>이 절의 수식은 공개 재현(eve-rlcd, Laya, NDM)의 것이다. Jev의 실제 손실 함수라는 보장은 없다.</p></div>
+    </section>
+
+    <!-- 5 -->
+    <section class="sec" id="s5">
+      <div class="sec-num">05</div>
+      <h2>빠른 판단의 비결</h2>
+      <p class="sec-intro">빠름은 두 층에서 나온다. 하나는 모델의 <b>계산 구조</b>이고, 다른 하나는 판단을 쪼개고 라우팅하는 <b>역할 분담 구조</b>다.</p>
+
+      <h3>5.1 계산 측면: 왜 70–500ms인가</h3>
+      <div class="table-wrap"><table>
+        <tr><th>비결</th><th>설명</th><th>근거</th></tr>
+        <tr><td>① 디코드 루프 제거</td><td>LLM은 토큰을 하나씩 생성하고, 각 토큰은 이전 토큰에 의존한다. Jev는 확률 헤드에서 바로 끝난다. 255개 선택지도 2개와 같은 시간에 처리된다.</td><td><span class="tag official">공식</span> <span class="tag observed">관측</span></td></tr>
+        <tr><td>② 단일 패스 / 병렬 질문</td><td>모든 질문을 한 요청에서 병렬·격리 평가한다. “질문을 추가해도 응답 시간은 거의 늘지 않는다.”</td><td><span class="tag official">공식</span></td></tr>
+        <tr><td>③ 상태 1회 인코딩 + prefix 캐시</td><td>비용이 O(Q×S)에서 O(S)+O(Q)로 줄어든다. 질문 40개, state 6,000토큰이면 인코딩량이 240,000토큰에서 6,000토큰으로 40배 줄어든다.</td><td><span class="tag official">공식</span> <span class="tag inferred">캐시 추정</span></td></tr>
+        <tr><td>④ 출력 극소화</td><td>답은 수십 토큰 분량의 구조값(관측 17–69 토큰)이다. 그래서 출력이 무료로 책정된다.</td><td><span class="tag official">공식 가격</span></td></tr>
+        <tr><td>⑤ 조건부 계산</td><td>30k 토큰을 약 160ms에 처리하려면 희소 MoE가 유력하다.</td><td><span class="tag inferred">미검증</span></td></tr>
+        <tr><td>⑥ 고카디널리티 2단계</td><td>선택지가 많으면 “독립 채점 → 명시적 선택” 2단계로 처리한다(최대 255개).</td><td><span class="tag official">공식 블로그</span></td></tr>
+      </table></div>
+
+      <div class="widget">
+        <div class="widget-head">
+          <span class="widget-label">레이턴시 레이스</span>
+          <h4>판단 한 번에 걸리는 시간 (로그 스케일)</h4>
+          <button class="btn primary small" id="raceRun" type="button">▶ 레이스</button>
+        </div>
+        <div class="race" id="race"></div>
+        <div class="race-scale" aria-hidden="true"><span>1ms</span><span>10ms</span><span>100ms</span><span>1s</span><span>10s</span><span>100s</span></div>
+        <p class="small muted" style="margin:10px 0 0">빨간 막대는 <span class="tag illus">가정</span>이다. 2,714 출력 토큰을 초당 100토큰으로 실제로 생성한다고 치면 약 27초가 걸린다. 나머지는 Hume(Jev)과 NDM 논문이 보고한 값이다. 환경이 서로 달라 직접 비교용이 아닌 <b>규모 감각용</b>이다.</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="widget-label">공식 cookbook 수치</div>
+          <p class="small">GDPR 위키백과 문서(약 54,000자)에 대한 질문 13개(Noul 8, Choice 2, Score 3)를 한 요청으로 묶었더니, 개별 13회 호출보다 <b>12.2배 저렴</b>했고 <b>답은 바뀌지 않았다</b>. 속도 향상은 문서 버전에 따라 10.0배(jev-1.12 시점 사본)와 11.8배(현재 색인, jev-1.14.0)로 다르게 표기된다.</p>
+          <p class="small muted" style="margin-bottom:0">개별 호출을 순차 실행한다고 가정한 수치다. 병렬 호출과 비교하면 이득이 더 작다.</p>
+        </div>
+        <div class="card">
+          <div class="widget-label">회사 주장 <span class="tag self">자체 평가</span></div>
+          <p class="small">자체 워크플로 평가에서 LLM 대비 <b>193.6배 빠르고 444.6배 저렴</b>하다고 한다.</p>
+          <p class="small muted" style="margin-bottom:0">기준 답이 GPT-6 Astra와 Fable 5.1의 평균이고, 워크플로도 자사 팀이 만들었다. 회사 스스로 “실세계 이득의 상단”이라는 단서를 달았다.</p>
+        </div>
+      </div>
+
+      <h3>5.2 인지 구조 측면: 분해 → 직감 → 코드 → 라우팅</h3>
+      <p>빠름의 진짜 원천은 모델만이 아니라 <b>역할 분담 구조</b>다.</p>
+      <figure class="diagram" data-mermaid>
+<script type="text/plain">flowchart TD
+    IN["입력(티켓·문서·에이전트 상태)"] --> RULE{"결정론적 규칙으로<br/>풀리는가?"}
+    RULE -- 예 --> CODE1["코드/DB 조회<br/>(예: 연체일 > 30 → 추심)"]
+    RULE -- 아니오 --> DEC["원자적 질문으로 분해"]
+    DEC --> JEV["Jev 1회 호출<br/>(System 1, 병렬)"]
+    JEV --> GATE{"confidence / P(yes)<br/>임계값"}
+    GATE -- "높음(≥0.9 등)" --> ACT["자동 실행"]
+    GATE -- "중간(0.5~0.9)" --> CONFIRM["확인 요청·플래그"]
+    GATE -- "낮음(<0.5)" --> S2["System 2로 에스컬레이션<br/>(추론 LLM 또는 사람)"]
+    S2 --> LOG["결과 기록 → 임계값 재조정"]
+    ACT --> LOG
+    CONFIRM --> LOG</script>
+        <div class="mm-out"></div>
+        <figcaption>규칙 → 분해 → Jev → 임계값 게이트 → 자동 / 확인 / 에스컬레이션</figcaption>
+      </figure>
+
+      <p><b>신뢰도 기반 라우팅</b> (System 1/2 캐스케이드):</p>
+      <div class="math">$$\text{output}(x)=\begin{cases}f_{S1}(x) &amp; \text{conf}(f_{S1}(x))\ge\theta\\ f_{S2}(x) &amp; \text{otherwise}\end{cases}\qquad C = C_1 + r\cdot C_2$$</div>
+      <p>r은 에스컬레이션 비율이다. 이 구조는 System 1이 <b>보정되어 있을 때만</b> 안전하다.</p>
+
+      <div class="widget">
+        <div class="widget-head"><span class="widget-label">캐스케이드 시뮬레이터</span><h4>θ를 움직이면 비용과 정확도가 함께 움직인다</h4></div>
+        <div class="ctrl"><span>θ (임계값)</span><input type="range" id="casT" min="30" max="99" value="70" aria-label="임계값"><span class="mono" id="casTv">0.70</span></div>
+        <div class="ctrl"><span>C₂ / C₁</span><input type="range" id="casC" min="10" max="500" step="10" value="100" aria-label="System 2 상대 비용"><span class="mono" id="casCv">100×</span></div>
+        <div class="out-grid">
+          <div class="stat"><div class="k">에스컬레이션 비율 r</div><div class="v" id="casR">-</div></div>
+          <div class="stat"><div class="k">전체 정확도</div><div class="v" id="casAcc">-</div></div>
+          <div class="stat"><div class="k">건당 비용 (C₁ = 1)</div><div class="v" id="casCost">-</div></div>
+          <div class="stat"><div class="k">전부 S2 대비 비용</div><div class="v" id="casSave">-</div></div>
+        </div>
+        <div class="chart" id="casChart" style="margin-top:12px"></div>
+        <div class="legend"><span><i style="background:var(--accent)"></i>전체 정확도</span><span><i style="background:var(--accent-2)"></i>에스컬레이션 비율 r</span><span><i style="background:var(--text)"></i>현재 θ</span></div>
+        <p class="small muted" style="margin:8px 0 0"><span class="tag illus">가상 데이터</span> 2,000건. S1의 최고 확률이 <b>보정되어 있다</b>(p<sub>max</sub> = 실제 적중 확률)고 가정했고, S2 정확도는 0.95로 가정했다.</p>
+      </div>
+
+      <div class="callout good">
+        <strong>실제 수치: 공식 SDE 캐스케이드 cookbook</strong>
+        <p>저가 모델이 낸 일정 답을 Jev가 규칙별 Noul(“이 규칙이 깨졌는가?”)로 검증하고, Jev가 가장 강하게 의심한 <b>3%만</b> 고성능 추론 모델로 보냈다. 결과는 1,000건당 <b>$0.26</b>에 성공률 <b>94.9%</b>였다.</p>
+      </div>
+      <p><b>임계값은 위험에 비례시킨다</b>: 같은 시스템 안에서도 행동마다 임계값을 다르게 둔다. 잔액 조회 같은 읽기 전용 작업은 낮게, 송금 승인 같은 파괴적 작업은 0.9 이상으로 둔다. 하한 0.5는 “진짜 모르는” 경우를 거른다 <span class="tag official">공식</span>.</p>
+
+      <h3>5.3 원리 정리: 무엇이 빠른 직관을 신뢰 가능하게 만드는가</h3>
+      <div class="grid-2">
+        <div class="card"><b>1. 출력 공간을 미리 닫는다</b><p class="small muted" style="margin:.3rem 0 0">타입 오류와 환각된 선택지가 수학적으로 불가능하다.</p></div>
+        <div class="card"><b>2. 확률을 보정한다 (RLCD)</b><p class="small muted" style="margin:.3rem 0 0">“모른다”를 숫자로 말하므로 코드가 멈출 때를 안다.</p></div>
+        <div class="card"><b>3. 질문을 격리한다</b><p class="small muted" style="margin:.3rem 0 0">질문 사이의 오염(context-rot)이 없다.</p></div>
+        <div class="card"><b>4. 판단과 정책을 분리한다</b><p class="small muted" style="margin:.3rem 0 0">모델은 확률만 내고, 무엇을 할지는 코드의 임계값이 정한다. 감사(audit)용으로 요청 ID, 질문명, 확률, 적용 임계값을 로그로 남긴다.</p></div>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="sec" id="s6">
+      <div class="sec-num">06</div>
+      <h2>판단 예제 (단계별 + 코드)</h2>
+      <p class="sec-intro">ERP와 CS가 연계된 고객 문의 라우팅을 따라가 보자. 판단을 분해하고, 한 번 호출하고, 수식으로 검산하고, 코드로 분기하는 순서다.</p>
+
+      <h3>6.1 시나리오: 고객 문의 라우팅</h3>
+      <div class="widget" id="stepper">
+        <div class="stepper-nav" id="stepNav" role="tablist"></div>
+        <div id="stepBody"></div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn small" id="stepPrev" type="button">← 이전</button>
+          <button class="btn small primary" id="stepNext" type="button">다음 →</button>
+        </div>
+      </div>
+
+      <h3>6.2 TypeScript: 공식 SDK 호출 (<code>@typesafe-ai/sdk</code>)</h3>
+      <div class="code" data-title="route-ticket.ts">
+<script type="text/plain">// npm install @typesafe-ai/sdk   (서버 사이드 전용: API 키를 브라우저에 노출하지 말 것)
+import { choice, noul, score, TypeSafeClient } from "@typesafe-ai/sdk";
+
+const client = new TypeSafeClient(); // TYPESAFE_API_KEY 환경변수 사용
+
+const { answers } = await client.systemOne({
+  model: "jev-latest",
+  state: {
+    ticket: "Hi, I was charged twice for my Pro subscription this month. Please fix this before my next payroll run on Friday.",
+  },
+  questions: {
+    team: choice("Which team should handle `ticket`?", {
+      billing: "Charges, invoices, and refunds",
+      technical: "Bugs, outages, and broken features",
+      account: "Login, password, and profile changes",
+      other: "None of the other options apply", // 탈출구 선택지 권장
+    }),
+    urgency: score("How urgent is `ticket`?", [
+      "No deadline; routine question",
+      "Customer wants a fix soon but nothing is blocked",
+      "Customer names a deadline or something is blocked now",
+    ]),
+    refund: noul("Is the customer in `ticket` asking for money back?"),
+  },
+});
+
+// 반환 타입은 질문 정의로부터 추론된다: answers.team.choice는 "billing" | "technical" | "account" | "other"
+const { team, urgency, refund } = answers;
+
+if (team.confidence < 0.5) {
+  routeToHuman("low-confidence-team");               // System 2로 에스컬레이션
+} else if (team.choice === "billing") {
+  const priority = urgency.confidence >= 0.7 && urgency.score >= 1.5 ? "high" : "normal";
+  const refundFlag =
+    refund.noul >= 0.7 ? "yes" : refund.noul <= 0.3 ? "no" : "needs-review"; // 중간대는 제3의 결과
+  enqueue("billing", { priority, refundFlag });
+} else {
+  enqueue(team.choice, { priority: "normal" });
+}
+
+declare function routeToHuman(reason: string): void;
+declare function enqueue(queue: string, meta: Record<string, string>): void;</script>
+      </div>
+
+      <h3>6.3 판단 원리를 손으로 구현한 학습용 코드 (API 없이 실행 가능)</h3>
+      <p class="small muted">Jev 내부를 재현한 코드가 아니다. 공개된 수식(softmax, 기대 점수, 공식 confidence, 라우팅)을 학습용으로 조립했다. 아래 <b>실행</b> 버튼을 누르면 같은 로직이 이 브라우저에서 돈다.</p>
+      <div class="code" data-title="decision-math.ts" data-run="decisionDemo">
+<script type="text/plain">type Probs = Record<string, number>;
+
+// (1) 로짓 → 확률 (softmax, 온도 T)
+function softmax(logits: number[], T = 1): number[] {
+  const m = Math.max(...logits.map(z => z / T));
+  const ex = logits.map(z => Math.exp(z / T - m));
+  const s = ex.reduce((a, b) => a + b, 0);
+  return ex.map(e => e / s);
+}
+
+// (2) 공식 문서의 Choice confidence
+function choiceConfidence(p: number[]): number {
+  const n = p.length, pmax = Math.max(...p);
+  return (pmax - 1 / n) / (1 - 1 / n);
+}
+
+// (3) Score: 기대 레벨 + 공식 confidence
+function scoreOf(p: number[]): { score: number; confidence: number } {
+  const n = p.length;
+  const score = p.reduce((acc, pi, i) => acc + i * pi, 0);
+  const m = p.indexOf(Math.max(...p));
+  const spread = p.reduce((acc, pi, i) => acc + pi * Math.abs(i - m), 0);
+  let mad = 0;
+  for (let i = 0; i < n; i++) mad += Math.abs(i - (n - 1) / 2) / n;
+  return { score, confidence: Math.max(0, 1 - spread / mad) };
+}
+
+// (4) 위험 비례 라우팅 (System 1 → System 2)
+type Route = "auto" | "confirm" | "escalate";
+function route(conf: number, highStakes: boolean): Route {
+  if (conf < 0.5) return "escalate";
+  if (highStakes) return conf > 0.9 ? "auto" : "confirm";
+  return "auto";
+}
+
+// 데모: 앞의 '애매한 티켓'을 흉내 낸 로짓
+const options = ["billing", "technical", "account"];
+const p = softmax([2.08, 0.0, -2.4]);              // ≈ [0.88, 0.11, 0.01]
+const conf = choiceConfidence(p);                  // ≈ 0.82
+console.log(options[p.indexOf(Math.max(...p))], p.map(x => x.toFixed(2)), conf.toFixed(2));
+console.log(route(conf, false), route(conf, true)); // "auto", "confirm"
+console.log(scoreOf([0, 0.57, 0.43]));             // { score: 1.43, confidence ≈ 0.355 }</script>
+      </div>
+
+      <h3>6.4 계층 판단 예제: 품목 분류 트리 (공식 cookbook)</h3>
+      <p>ERP의 품목 분류 체계나 조직도처럼 트리 구조를 가진 판단은, 노드마다 자식들을 선택지로 하는 Choice를 한 번씩 던진다.</p>
+      <ul class="tight">
+        <li><b>Greedy</b>: 매 단계 최고 확률 자식으로 내려간다. 초반 실수를 되돌릴 수 없다.</li>
+        <li><b>Beam(K)</b>: 경로 K개를 유지한다. 경로 점수는 <b>간선 확률의 기하평균</b> \((\prod p_e)^{1/d}\)이다. 깊은 리프가 결정 횟수가 많다는 이유만으로 불리해지지 않게 하기 위해서다. 깊이가 10을 넘으면 \(\exp(\text{mean}(\log p))\)로 계산한다.</li>
+        <li>공식 결과: K=3 beam은 기대 리프 3개 중 3개, greedy는 3개 중 2개를 맞혔다 <span class="tag official">공식</span>.</li>
+      </ul>
+      <div class="widget tree">
+        <div class="widget-head"><span class="widget-label">인터랙티브</span><h4>Greedy vs Beam</h4>
+          <button class="btn small" data-tree="greedy" aria-pressed="true" type="button">Greedy</button>
+          <button class="btn small" data-tree="beam" aria-pressed="false" type="button">Beam (K=3)</button>
+        </div>
+        <div id="treeSvg"></div>
+        <div class="table-wrap"><table id="treeTable"></table></div>
+        <p class="small muted" style="margin:0"><span class="tag illus">가상 확률</span> 첫 단계에서 근소하게 앞선 “사무용품”을 고른 greedy는 리프 단계에서 애매해진다. beam은 “전산 장비 → 노트북”의 확실한 경로를 찾는다.</p>
+      </div>
+      <div class="code" data-title="beam-classify.ts">
+<script type="text/plain">// 빔 탐색 의사 코드
+async function beamClassify(root: Node, state: unknown, K = 3) {
+  let beams = [{ path: [root], logSum: 0 }];
+  while (beams.some(b => !last(b.path).isLeaf)) {
+    const expanded = await Promise.all(beams.map(async b => {      // 한 레벨 = 병렬 1라운드
+      const node = last(b.path);
+      if (node.isLeaf) return [b];
+      const probs: Probs = await askChoice(state, node.children);  // Jev Choice 1회
+      return node.children.map(c => ({ path: [...b.path, c], logSum: b.logSum + Math.log(probs[c.id] + 1e-9) }));
+    }));
+    beams = expanded.flat()
+      .sort((a, b) => geo(b) - geo(a))   // 기하평균 = exp(logSum / 결정 횟수)
+      .slice(0, K);
+  }
+  return beams[0];
+}
+const geo = (b: { path: Node[]; logSum: number }) => Math.exp(b.logSum / Math.max(1, b.path.length - 1));
+declare function askChoice(state: unknown, children: Node[]): Promise<Probs>;
+interface Node { id: string; isLeaf: boolean; children: Node[] }
+const last = <T,>(a: T[]) => a[a.length - 1];</script>
+      </div>
+
+      <h3>6.5 분해 예제: 개수 세기 (모델의 약점 우회)</h3>
+      <div class="grid-2">
+        <div class="card" style="border-color:var(--bad)">
+          <div class="widget-label" style="color:var(--bad)">✗ 이렇게 묻지 않는다</div>
+          <p class="small" style="margin:.3rem 0 0">“<code>items</code>에 과일이 몇 개인가?”를 Score나 Choice 하나로 묻는다. 공식 “jaggedness” 문서에 따르면 Jev는 <b>수치 정밀도가 필요한 작업에 약하다</b>.</p>
+        </div>
+        <div class="card" style="border-color:var(--good)">
+          <div class="widget-label" style="color:var(--good)">✓ 이렇게 쪼갠다</div>
+          <p class="small" style="margin:.3rem 0 0">항목마다 Noul(“<code>items[i]</code>가 과일 이름인가?”)을 병렬로 묻고, <b>코드에서</b> <code>noul &gt; 0.5</code>인 것을 센다. 산술·날짜 계산·임계값 비교는 코드로 먼저 처리하고, 의미 판단만 Jev에 넘긴다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="sec" id="s7">
+      <div class="sec-num">07</div>
+      <h2>다른 모델과 비교</h2>
+      <div class="cmp">
+        <div class="card"><div class="form">호스팅 · 비공개</div><h4>Jev (TypeSafe)</h4><p>Choice/Score/Noul/Box, 70–500ms, 입력 100만 토큰당 $0.042. 최초의 System One 모델이다.</p></div>
+        <div class="card"><div class="form">오픈 · Apache 2.0</div><h4>Laya (Convai Innovations)</h4><p>ModernBERT-large 421M 비자기회귀 모델. 단일 패스로 T4에서 약 33ms에 동작한다. Jev 호환 API와 Node/TS용 <code>@receptron/laya</code>(ONNX)를 제공한다.</p><p class="muted">자체 보고 기준 파인튜닝 체크포인트 정확도는 0.766으로 Jev(0.727)보다 높다. 문서는 Laya를 제로샷 엔진이 아니라 특화용 베이스라고 설명한다.</p></div>
+        <div class="card"><div class="form">논문 · 오픈 설계</div><h4>NDM-Block (Softplan)</h4><p>블록 마스크로 순서 불변과 질문 격리를 구조적으로 보장한다. 실제 법률 문서에서 운영 중인 LLM 분류기와 91.2% 일치했다.</p></div>
+        <div class="card"><div class="form">과제별 학습</div><h4>파인튜닝 분류기 (DeBERTa 등)</h4><p>라벨이 있으면 대부분 가장 정확하다. 선택지가 새로 생기면 재학습해야 한다.</p></div>
+        <div class="card"><div class="form">생성형</div><h4>LLM + JSON 파싱</h4><p>유연하지만 느리고 비싸다. 순서·라벨 편향과 과신 문제가 있다. System 2 역할에 적합하다.</p></div>
+        <div class="card jepa"><div class="form">자기지도 표현 학습 <span class="tag illus">이름만 비슷</span></div><h4>JEPA (LeCun)</h4><p>입력 공간이 아니라 <b>임베딩 공간에서 예측</b>하고, 예측 오차를 에너지로 해석한다. 판단 API가 아니라 세계 모델 연구 계열이다.</p></div>
+      </div>
+
+      <h3>독립 평가 요약</h3>
+      <div class="card">
+        <h4 style="margin-top:0">Deußer 외 (arXiv 2609.37647)</h4>
+        <p class="small">jev-1.13.0을 37개 데이터셋에서 제로샷으로 평가했다. 346,009건 요청에 든 비용은 US$10 미만이었다. IMDB·SST-2·HellaSwag·ARC에서 <b>95–99%</b>를 기록했고, 37개 중 27개에서 Qwen3.8-27B를, 37개 전부에서 Gemma-4-E4B를 앞섰다. 선택 확률도 잘 보정되어 있었다.</p>
+        <p class="small" style="margin-bottom:0">반면 Noul 이진 확률은 임계값 튜닝이 필요했다. UNFAIR-ToS에서는 튜닝으로 micro-F1이 0.50에서 0.75로 올랐다. 세밀한 분류와 루브릭 품질 판단에는 약했다.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">Rafe &amp; Das (arXiv 2610.00346)</h4>
+        <p class="small">라벨이 있을 때는 파인튜닝한 DeBERTa-v3-large가 하나를 빼고 모든 라벨 벤치마크에서 가장 정확했다(예: 0.953 vs Jev 0.913).</p>
+        <div class="bars" id="flipBars" style="margin:10px 0"></div>
+        <p class="small" style="margin-bottom:0">루브릭에서 yes/no 표기를 반대로 붙이자 Jev 답이 <b>100개 중 50.5개</b> 뒤집혔다. 시험한 생성형 모델은 모두 최소 16.8개, 파인튜닝된 결정 체크포인트 4종은 최대 6.5개였다.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">비결정성</h4>
+        <p class="small" style="margin-bottom:0">동일 요청을 반복하면 라벨 510개 중 4개가 바뀌었다. 확률은 0.01–1.00 범위에서 소수 둘째 자리 격자에 놓인다(감사 논문 arXiv 2609.32160 정리). OpenRouter 블로그에서도 같은 Score가 1.21과 1.17로 달랐다. 그래서 임계값은 정확한 값이 아니라 <b>구간(band)</b>으로 잡아야 한다.</p>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section class="sec" id="s8">
+      <div class="sec-num">08</div>
+      <h2>권장 사항 (실무 적용 순서)</h2>
+      <ol class="steps">
+        <li><div><b>결정론으로 풀리는 것은 코드로 처리한다.</b> 정규식이나 DB 조회가 어떤 모델보다 낫다(공식 권고).</div></li>
+        <li><div><b>판단을 원자적 질문으로 쪼갠다.</b> 한 질문에는 한 가지 직감 판단만 담는다.</div></li>
+        <li><div><b>criteria를 신입 사원 브리핑하듯 쓴다.</b> 질문 ID는 모델에 전달되지 않으므로 모든 의미를 <code>instructions</code>와 <code>criteria</code>에 담는다. “other” 같은 탈출구 선택지도 넣는다.</div></li>
+        <li><div><b>임계값은 수백 개 라벨 데이터로 정한다.</b> confidence 대비 정확도를 그려 보고, 자동 실행 구간의 오류율이 감내할 만한 선을 고른다.</div></li>
+        <li><div><b>위험에 비례한 임계값과 3단 경로(자동 / 확인 / 에스컬레이션)를 쓴다.</b></div></li>
+        <li><div><b>yes/no 표현과 선택지 이름 민감도를 직접 테스트한다.</b> 50.5% 뒤집힘 사례가 있다.</div></li>
+        <li><div><b>로그에는 state(고객 데이터)를 남기지 않는다.</b> 요청 ID, 확률, 적용 임계값만 남긴다.</div></li>
+        <li><div><b>데이터 상주(on-prem)가 필요하면</b> Laya나 NDM 같은 오픈 대안을 검토한다(TS에서는 <code>@receptron/laya</code>).</div></li>
+      </ol>
+    </section>
+
+    <!-- 9 -->
+    <section class="sec" id="s9">
+      <div class="sec-num">09</div>
+      <h2>주의 사항 (Caveats)</h2>
+      <div class="grid-2">
+        <div class="callout warn"><strong>이름 확인</strong><p>“타입스크립트에서 낸”은 회사명 TypeSafe를 잘못 들었을 가능성이 매우 높다. TypeScript와의 실제 연결 고리는 공식 SDK와 커뮤니티 도구(jev-use, jev-combinators, open-jev 등)다.</p></div>
+        <div class="callout warn"><strong>아키텍처는 대부분 추론이다</strong><p>인과 디코더, prefix 캐시, MoE 등은 Hume의 블랙박스 분석에서 나왔다. 이 페이지는 공식 / 관측 / 추정 라벨로 이를 구분했다.</p></div>
+        <div class="callout warn"><strong>RLCD 세부는 비공개다</strong><p>4.6절의 수식은 공개 재현(eve-rlcd, Laya, NDM)의 것이며, Jev의 실제 손실 함수라는 보장이 없다.</p></div>
+        <div class="callout warn"><strong>속도·비용 배수는 자체 평가다</strong><p>193.6배와 444.6배는 TypeSafe 자체 워크플로 평가 결과이고, 회사 스스로 상단 추정치라고 밝혔다.</p></div>
+        <div class="callout warn"><strong>보정 ≠ 정답</strong><p>보정은 집단 평균에서만 성립하고, confidence는 분포 집중도일 뿐이다.</p></div>
+        <div class="callout warn"><strong>급변하는 생태계</strong><p>2026년 9–11월에 버전(1.13 → 1.14), 기능(이미지·Box), 경쟁 모델(2026-10-16 OpenRouter 기준 13개 제조사의 결정 모델 21종)이 빠르게 바뀌었다. 이 페이지의 자료 기준은 <b>2026년 11월</b>이다.</p></div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="sec" id="s10">
+      <div class="sec-num">10</div>
+      <h2>요약 · 퀴즈 · 샌드박스</h2>
+      <div class="callout info">
+        <strong>한 줄 요약</strong>
+        <p>Jev는 “상태 + 타입 질문 → 보정된 확률 분포”를 한 번의 병렬 패스로 내는 System 1 판단 엔진이다. <b>빠름</b>은 디코드 제거·상태 1회 인코딩·질문 격리에서 나오고, <b>신뢰성</b>은 RLCD 보정과 코드가 쥔 임계값 라우팅에서 나온다.</p>
+      </div>
+
+      <h3>핵심 용어 카드</h3>
+      <div class="gloss">
+        <details><summary>State / Question / Criteria / Primitive</summary><p>State는 판단 대상 데이터, Question은 instructions + criteria다. Primitive는 Choice(선택지 하나), Score(순서 있는 레벨), Noul(예/아니오 확률), Box(1.14에서 추가)다.</p></details>
+        <details><summary>Calibration · ECE · Brier</summary><p>보정은 말한 확률과 실제 적중률이 집단 단위에서 일치하는 성질이다. ECE는 구간별 정확도와 확률의 차이를 가중 평균한 값이고, Brier는 확률과 정답(0/1)의 제곱 오차 평균이다.</p></details>
+        <details><summary>strictly proper scoring rule</summary><p>참 확률을 그대로 말할 때만 기대 점수가 최대가 되는 채점 규칙이다(Brier, 로그 손실). 0/1 정확도 보상은 여기에 해당하지 않는다.</p></details>
+        <details><summary>Confidence vs 확률</summary><p>confidence는 분포가 한쪽에 몰린 정도(집중도)를 재는 통계다. 그 답이 맞을 확률이 아니다.</p></details>
+        <details><summary>RLCD vs RLHF vs RLVR</summary><p>RLHF는 선호, RLVR은 검증 가능한 정답, RLCD는 결과에 맞춘 정직한 확률을 최적화한다.</p></details>
+        <details><summary>Prefill · prefix caching · 질문 격리</summary><p>state를 한 번 인코딩해(prefill) KV를 재사용하고, 질문 가지끼리는 서로를 보지 못하게 하는 구조다. 비용이 O(Q×S)에서 O(S)+O(Q)로 줄어든다.</p></details>
+        <details><summary>listwise vs pointwise</summary><p>pointwise는 선택지를 각각 독립 채점하고, listwise는 선택지들을 서로의 맥락으로 함께 읽는다. 무관한 선택지를 추가했을 때 로그 오즈가 움직이면 listwise다.</p></details>
+        <details><summary>캐스케이드 · 에스컬레이션 · 위험 비례 임계값</summary><p>S1의 확신이 낮을 때만 S2로 넘기는 구조다. 행동의 위험도에 따라 임계값을 다르게 둔다.</p></details>
+      </div>
+
+      <h3>퀴즈 <span class="score-pill" id="quizScore">0 / 8</span></h3>
+      <div class="quiz" id="quiz"></div>
+
+      <h3>나만의 판단 설계 샌드박스</h3>
+      <div class="widget">
+        <div class="widget-head"><span class="widget-label">샌드박스</span><h4>질문 3개를 정의하고 라우팅 결과 보기</h4>
+          <button class="btn primary small" id="sbRun" type="button">▶ 판단 실행</button>
+          <button class="btn small" id="sbReseed" type="button">↻ 다른 샘플</button>
+        </div>
+        <p class="small muted" style="margin-top:0"><span class="tag illus">가짜 로짓</span> 실제 모델을 호출하지 않는다. 입력 텍스트에서 해시로 로짓을 만들고, 6.3절의 학습용 함수(softmax · confidence · score · route)를 그대로 적용한다. <b>설계 연습용</b>이다.</p>
+        <label class="small" for="sbState"><b>state</b></label>
+        <textarea id="sbState">거래처 A사에서 3월분 세금계산서가 두 번 발행되었다고 연락이 왔습니다. 결산 마감(금요일) 전에 정정 처리 부탁드립니다.</textarea>
+        <div id="sbQs"></div>
+        <div class="sb-results" id="sbResults"></div>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section class="sec" id="s11">
+      <div class="sec-num">11</div>
+      <h2>참고 자료</h2>
+      <ul class="refs small">
+        <li><b>TypeSafe 공식 문서</b>: Introduction, System One, Confidence, Primitives(Choice/Score/Noul/Box), How to build with TypeSafe, AI primer(RLCD), Model jaggedness, Models, Cookbooks(Parallel questions, Hierarchical classification, SDE cascade). docs.typesafe.ai</li>
+        <li><b>TypeSafe 블로그</b>: “Introducing System One Models &amp; Jev” (Diogo Almeida, 2026-09-15)</li>
+        <li><b>OpenRouter 블로그</b>: “What Is Jev? TypeSafe's Decision Model Explained for Developers” (2026-09-21, 2026-10-16 갱신), Jev-Verified Cascade cookbook</li>
+        <li>Archer Hume, “Jev's Architecture Unmasked” (2026-09-17) 및 Dale Nguyen의 인터랙티브 해설</li>
+        <li>Antunes 외, “Narrow Decision Models: A System-1 Architecture for Calibrated, Typed Decisions” (arXiv 2610.25553)</li>
+        <li>Deußer · Sparrenberg · Sifa, “Evaluating and Benchmarking the System One Model Jev” (arXiv 2609.37647)</li>
+        <li>Rafe · Das, “Benchmarking System One decision models against trained classifiers and language models for automated decision gates” (arXiv 2610.00346)</li>
+        <li>“Typed Decision Models: An Early Evidence Audit and Evaluation Checklist” (arXiv 2609.32160)</li>
+        <li>Convai Innovations, Laya (GitHub NandhaKishorM/laya, Hugging Face), receptron/laya (TS/ONNX)</li>
+        <li>투자·회사 정보: DCVC 발표, Business Wire 보도자료 (2026-09-15)</li>
+        <li>배경: Kahneman, <i>Thinking, Fast and Slow</i> (2011); LeCun, “A Path Towards Autonomous Machine Intelligence” (2022, JEPA)</li>
+      </ul>
+    </section>
+  </main>
+</div>
+
+<footer>Jev 학습 노트 · 자료 기준 2026년 11월 · 공식 / 관측 / 추정 라벨을 구분해 읽을 것</footer>
+
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+
+<script>
+(function(){
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const fmt = (x, d = 2) => Number(x).toFixed(d);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ---------- core math (same as section 6.3) ---------- */
+function softmax(z, T = 1){ const m = Math.max(...z.map(v => v / T)); const e = z.map(v => Math.exp(v / T - m)); const s = e.reduce((a,b)=>a+b,0); return e.map(v => v / s); }
+function choiceConf(p){ const n = p.length, pm = Math.max(...p); return (pm - 1/n) / (1 - 1/n); }
+function scoreOf(p){
+  const n = p.length;
+  const score = p.reduce((a, pi, i) => a + i * pi, 0);
+  const m = p.indexOf(Math.max(...p));
+  const spread = p.reduce((a, pi, i) => a + pi * Math.abs(i - m), 0);
+  let mad = 0; for (let i = 0; i < n; i++) mad += Math.abs(i - (n - 1) / 2) / n;
+  return { score, confidence: Math.max(0, 1 - spread / mad), mode: m };
+}
+function route(conf, high){ if (conf < 0.5) return 'escalate'; if (high) return conf > 0.9 ? 'auto' : 'confirm'; return 'auto'; }
+const ROUTE_LABEL = { auto: '자동 실행', confirm: '확인 요청', escalate: '에스컬레이션' };
+const routeBadge = r => `<span class="route-badge route-${r}">${ROUTE_LABEL[r]}</span>`;
+function normalize(w){ const s = w.reduce((a,b)=>a+b,0) || 1; return w.map(v => v / s); }
+
+/* ---------- bars ---------- */
+function renderBars(el, labels, probs, opts = {}){
+  const top = probs.indexOf(Math.max(...probs));
+  const digits = opts.digits ?? 2;
+  el.innerHTML = labels.map((l, i) => `
+    <div class="bar-row"><span class="lbl" title="${esc(l)}">${esc(l)}</span>
+      <div class="bar-track"><div class="bar-fill ${i === top && !opts.noTop ? 'top' : ''}" data-w="${(probs[i] / (opts.max || 1)) * 100}"></div></div>
+      <span class="val">${opts.raw ? probs[i] : fmt(probs[i], digits)}</span></div>`).join('');
+  requestAnimationFrame(() => $$('.bar-fill', el).forEach(f => f.style.width = Math.max(0, Math.min(100, +f.dataset.w)) + '%'));
+}
+
+/* ---------- theme ---------- */
+const root = document.documentElement;
+const mq = window.matchMedia('(prefers-color-scheme: dark)');
+const currentTheme = () => root.dataset.theme || (mq.matches ? 'dark' : 'light');
+$('#themeBtn').addEventListener('click', () => {
+  const next = currentTheme() === 'dark' ? 'light' : 'dark';
+  root.dataset.theme = next;
+  try { localStorage.setItem('jev-theme', next); } catch (e) {}
+  renderMermaid(); drawRel(); drawCascade(); drawTree();
+});
+mq.addEventListener && mq.addEventListener('change', () => { if (!root.dataset.theme) { renderMermaid(); drawRel(); drawCascade(); drawTree(); } });
+
+/* ---------- progress + scrollspy ---------- */
+const progress = $('#progress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement.scrollHeight - innerHeight;
+  progress.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + '%';
+}, { passive: true });
+const tocLinks = $$('.toc a');
+if ('IntersectionObserver' in window){
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting){ tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id)); } });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  $$('section.sec').forEach(s => io.observe(s));
+}
+
+/* ---------- mermaid ---------- */
+let mermaidReady = false;
+async function renderMermaid(){
+  const figs = $$('[data-mermaid]');
+  if (!window.mermaid){
+    figs.forEach(f => { const out = $('.mm-out', f); if (!out.innerHTML) out.innerHTML = `<div class="mm-fallback">${esc($('script', f).textContent)}</div>`; });
+    return;
+  }
+  const cs = getComputedStyle(root); const v = n => cs.getPropertyValue(n).trim();
+  mermaid.initialize({ startOnLoad: false, theme: 'base', securityLevel: 'strict',
+    flowchart: { htmlLabels: true, curve: 'basis', useMaxWidth: true },
+    themeVariables: { primaryColor: v('--surface-2'), primaryTextColor: v('--text'), primaryBorderColor: v('--accent'),
+      lineColor: v('--muted'), secondaryColor: v('--accent-soft'), tertiaryColor: v('--surface'), mainBkg: v('--surface-2'),
+      nodeBorder: v('--accent'), clusterBkg: v('--surface'), edgeLabelBackground: v('--surface'), textColor: v('--text'),
+      fontFamily: '"Noto Sans KR", sans-serif', fontSize: '14px' } });
+  for (const f of figs){
+    const src = $('script', f).textContent.trim();
+    try { const { svg } = await mermaid.render('mm' + Math.random().toString(36).slice(2), src); $('.mm-out', f).innerHTML = svg; }
+    catch (e) { $('.mm-out', f).innerHTML = `<div class="mm-fallback">${esc(src)}</div>`; }
+  }
+  mermaidReady = true;
+}
+window.addEventListener('load', () => { renderMermaid(); });
+
+/* ---------- code blocks ---------- */
+function highlight(code){
+  const re = /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(const|let|var|function|return|if|else|async|await|import|from|type|interface|declare|new|for|while|of|in|export|true|false)\b|\b(\d+(?:\.\d+)?(?:e-?\d+)?)\b/g;
+  let out = '', last = 0, m;
+  while ((m = re.exec(code))){
+    out += esc(code.slice(last, m.index));
+    const cls = m[1] ? 'com' : m[2] ? 'str' : m[3] ? 'kw' : 'num';
+    out += `<span class="tok-${cls}">${esc(m[0])}</span>`;
+    last = re.lastIndex;
+  }
+  return out + esc(code.slice(last));
+}
+$$('.code').forEach(block => {
+  const src = $('script', block).textContent.replace(/^\n/, '');
+  const head = document.createElement('div'); head.className = 'code-head';
+  head.innerHTML = `<span class="t">${esc(block.dataset.title || 'code')}</span>`;
+  const copy = document.createElement('button'); copy.type = 'button'; copy.textContent = '복사';
+  copy.onclick = async () => { try { await navigator.clipboard.writeText(src); copy.textContent = '복사됨'; } catch (e) { copy.textContent = '복사 실패'; } setTimeout(() => copy.textContent = '복사', 1400); };
+  head.appendChild(copy);
+  let consoleEl = null;
+  if (block.dataset.run){
+    const run = document.createElement('button'); run.type = 'button'; run.textContent = '▶ 실행';
+    run.onclick = () => { consoleEl.textContent = runners[block.dataset.run](); };
+    head.insertBefore(run, copy);
+  }
+  const pre = document.createElement('pre'); pre.innerHTML = highlight(src);
+  block.prepend(head); block.appendChild(pre);
+  if (block.dataset.run){ consoleEl = document.createElement('div'); consoleEl.className = 'console'; consoleEl.textContent = '// ▶ 실행을 누르면 console.log 출력이 여기에 표시된다'; block.after(consoleEl); }
+});
+const runners = {
+  decisionDemo(){
+    const options = ['billing','technical','account'];
+    const p = softmax([2.08, 0.0, -2.4]);
+    const conf = choiceConf(p);
+    const s = scoreOf([0, 0.57, 0.43]);
+    return [
+      `> ${options[p.indexOf(Math.max(...p))]} [ '${p.map(x => x.toFixed(2)).join("', '")}' ] ${conf.toFixed(2)}`,
+      `> ${route(conf, false)} ${route(conf, true)}`,
+      `> { score: ${+s.score.toFixed(4)}, confidence: ${+s.confidence.toFixed(4)} }`
+    ].join('\n');
+  }
+};
+
+/* ---------- 1. LLM vs Jev demo ---------- */
+(function(){
+  const llmText = '{\n  "team": "billing",\n  "urgency": "high",\n  "refund": "yes",\n  "note": "The customer reports being charged twice for the Pro plan and mentions a payroll run on Friday, so this should be prioritized."\n}\n\n→ JSON.parse() → 스키마 검증 → 실패 시 재시도';
+  let raf = null, jevTimer = null;
+  $('#vsRun').addEventListener('click', () => {
+    cancelAnimationFrame(raf); clearTimeout(jevTimer);
+    const llm = $('#vsLlm'), lt = $('#vsLlmT'), jev = $('#vsJev'), jt = $('#vsJevT');
+    jev.innerHTML = '<p class="muted small" style="margin:0">prefill 중…</p>'; jt.textContent = '처리 중';
+    const t0 = performance.now(); const perChar = 22;
+    const step = now => {
+      const n = Math.min(llmText.length, Math.floor((now - t0) / perChar));
+      llm.innerHTML = esc(llmText.slice(0, n)) + (n < llmText.length ? '<span class="caret"></span>' : '');
+      lt.textContent = `${Math.ceil(n / 4)} 토큰 생성`;
+      if (n < llmText.length) raf = requestAnimationFrame(step); else lt.textContent += ' · 완료';
+    };
+    raf = requestAnimationFrame(step);
+    jevTimer = setTimeout(() => {
+      jt.textContent = '한 번의 패스 · 완료';
+      jev.innerHTML = `
+        <div class="jev-q"><div class="qname">team · Choice · conf 1.00</div><div class="bars" id="vsB1"></div></div>
+        <div class="jev-q"><div class="qname">urgency · Score · score 2 · conf 1.00</div><div class="bars" id="vsB2"></div></div>
+        <div class="jev-q"><div class="qname">refund · Noul · 0.82 ≥ 0.7 → yes</div><div class="bars" id="vsB3"></div></div>
+        <p class="small muted" style="margin:0">입력 447토큰 · 비용 약 $0.000019</p>`;
+      renderBars($('#vsB1'), ['billing','technical','account'], [1,0,0]);
+      renderBars($('#vsB2'), ['0 기한 없음','1 빨리','2 기한/차단'], [0,0,1]);
+      renderBars($('#vsB3'), ['P(yes)'], [0.82]);
+    }, 260);
+  });
+})();
+
+/* ---------- 2. sort game ---------- */
+(function(){
+  const cards = [
+    { t: '이 티켓은 환불 요청인가?', a: 'S1', why: '전문가가 몇 초 안에 내리는 직감 판단이라 Noul 하나로 충분하다.' },
+    { t: '환불 정책 위반 사유서 작성', a: 'S2', why: '자유 텍스트를 만들어야 하는 작문 작업이다.' },
+    { t: '이 송장은 어느 비용 계정 버킷에 속하는가?', a: 'S1', why: '미리 정해진 버킷 중 하나를 고르는 Choice다.' },
+    { t: '연체일이 30일을 넘었는가?', a: 'CODE', why: '날짜 계산과 비교는 결정론적이다. DB 조회와 코드가 어떤 모델보다 낫다.' },
+    { t: '계약서의 위험 조항을 요약하고 수정안 제시', a: 'S2', why: '다단계 추론과 텍스트 생성이 필요하다.' },
+    { t: '에이전트의 다음 행동이 사용자 지시를 위반하는가?', a: 'S1', why: '게이팅(검증) 판단이다. Noul로 묻고 임계값으로 막는다.' },
+    { t: '고객 메일이 얼마나 긴급한가?', a: 'S1', why: '순서 있는 레벨로 묻는 Score가 적합하다.' },
+    { t: '주문 수량 × 단가로 공급가액 계산', a: 'CODE', why: '정확한 산술은 Jev의 약점이다. 코드로 처리한다.' },
+    { t: '결제 모듈 마이그레이션 코드 작성', a: 'S2', why: '코드 생성은 System 2 영역이다.' }
+  ];
+  const L = { S1: 'S1 (Jev)', S2: 'S2 (LLM·사람)', CODE: '코드' };
+  const wrap = $('#gameCards'), scoreEl = $('#gameScore');
+  function render(){
+    wrap.innerHTML = cards.map((c, i) => `
+      <div class="gcard" data-i="${i}">
+        <span class="gtext">${esc(c.t)}</span>
+        <span class="gbtns">${['S1','S2','CODE'].map(k => `<button class="btn small" type="button" data-k="${k}">${k === 'CODE' ? '코드' : k}</button>`).join('')}</span>
+        <span class="gfeedback"></span>
+      </div>`).join('');
+    update();
+  }
+  function update(){
+    const done = $$('.gcard.correct, .gcard.wrong', wrap).length;
+    const ok = $$('.gcard.correct', wrap).length;
+    scoreEl.textContent = `${ok} / ${done}` + (done === cards.length ? ' 완료' : '');
+  }
+  wrap.addEventListener('click', e => {
+    const b = e.target.closest('button[data-k]'); if (!b) return;
+    const card = b.closest('.gcard'); if (card.classList.contains('correct') || card.classList.contains('wrong')) return;
+    const c = cards[+card.dataset.i]; const right = b.dataset.k === c.a;
+    card.classList.add(right ? 'correct' : 'wrong');
+    b.setAttribute('aria-pressed', 'true');
+    $('.gfeedback', card).innerHTML = `${right ? '✓ 정답' : '✗ 정답은 <b>' + L[c.a] + '</b>'}. ${esc(c.why)}`;
+    update();
+  });
+  $('#gameReset').addEventListener('click', render);
+  render();
+})();
+
+/* ---------- 3. attention mask ---------- */
+(function(){
+  const toks = [
+    { id: 'S',  label: 'state',   group: 'S',  anc: [] },
+    { id: 'Q1', label: 'Q1 지시', group: 'Q1', anc: ['S'] },
+    { id: 'A1', label: 'Q1·A',    group: 'Q1', anc: ['S','Q1'] },
+    { id: 'B1', label: 'Q1·B',    group: 'Q1', anc: ['S','Q1'] },
+    { id: 'Q2', label: 'Q2 지시', group: 'Q2', anc: ['S'] },
+    { id: 'A2', label: 'Q2·A',    group: 'Q2', anc: ['S','Q2'] },
+    { id: 'B2', label: 'Q2·B',    group: 'Q2', anc: ['S','Q2'] }
+  ];
+  const notes = {
+    ndm: 'NDM: 각 블록은 자기 자신과 조상만 본다. Q1·A와 Q1·B는 서로를 보지 못하고 같은 논리적 위치를 쓰므로, <b>선택지 순서를 바꿔도 결과가 같다</b>. Q2는 Q1을 볼 수 없다(질문 격리). state는 자기 자신만 보므로 KV를 그대로 캐시할 수 있다.',
+    hume: 'Hume 추정: 질문 가지끼리는 격리되어 있지만, 가지 안에서는 좌→우 인과 순서로 읽는다. 그래서 Q1·B가 Q1·A를 본다(listwise). 무관한 선택지를 추가하면 로그 오즈가 −0.28 움직인 관측과 맞는다.',
+    none: '격리 없음: 하나의 긴 프롬프트를 쓰는 일반 인과 LLM이다. Q2가 Q1과 그 선택지까지 모두 보므로, 앞선 질문이 뒤 질문을 오염시킬 수 있다(context-rot). 순서 편향도 생긴다.'
+  };
+  let mode = 'ndm';
+  const sees = (t, u, ti, ui) => {
+    if (mode === 'ndm') return u.id === t.id || t.anc.includes(u.id);
+    if (mode === 'hume') return t.anc.includes(u.id) || (u.group === t.group && ui <= ti);
+    return ui <= ti;
+  };
+  const grid = $('#maskGrid'), info = $('#maskInfo');
+  function render(){
+    grid.style.gridTemplateColumns = `64px repeat(${toks.length}, 1fr)`;
+    let h = '<div></div>' + toks.map(t => `<div class="mh">${t.label.replace(' ', '<br>')}</div>`).join('');
+    toks.forEach((t, ti) => {
+      h += `<div class="mh row">${t.label}</div>`;
+      toks.forEach((u, ui) => { const on = sees(t, u, ti, ui); h += `<div class="mcell ${on ? 'on' : ''}" tabindex="0" role="button" data-t="${ti}" data-u="${ui}" aria-label="${t.label} → ${u.label}: ${on ? '볼 수 있음' : '차단'}"></div>`; });
+    });
+    grid.innerHTML = h;
+    $('#maskNote').innerHTML = notes[mode];
+  }
+  function show(cell){
+    $$('.mcell.focus', grid).forEach(c => c.classList.remove('focus'));
+    cell.classList.add('focus');
+    const t = toks[+cell.dataset.t], u = toks[+cell.dataset.u];
+    const on = cell.classList.contains('on');
+    info.innerHTML = `<b>${t.label}</b> 토큰은 <b>${u.label}</b>을(를) ${on ? '<span style="color:var(--good);font-weight:700">볼 수 있다</span> (M = 0)' : '<span style="color:var(--bad);font-weight:700">볼 수 없다</span> (M = −∞)'}.`;
+  }
+  grid.addEventListener('mouseover', e => { const c = e.target.closest('.mcell'); if (c) show(c); });
+  grid.addEventListener('click', e => { const c = e.target.closest('.mcell'); if (c) show(c); });
+  grid.addEventListener('focusin', e => { const c = e.target.closest('.mcell'); if (c) show(c); });
+  $$('[data-mask]').forEach(b => b.addEventListener('click', () => {
+    mode = b.dataset.mask; $$('[data-mask]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); render();
+    info.textContent = '셀에 마우스를 올리거나 탭하면 설명이 나온다. 행 = 쿼리 토큰(보는 쪽), 열 = 키 토큰(보이는 쪽).';
+  }));
+  render();
+})();
+
+/* ---------- 4.2 Noul ---------- */
+(function(){
+  const s = $('#noulP');
+  function up(){
+    const p = s.value / 100;
+    $('#noulPv').textContent = fmt(p);
+    const out = $('#noulOut'), r = $('#noulRoute');
+    $('#noulConf').textContent = fmt(Math.abs(2 * p - 1));
+    if (p >= 0.7){ out.textContent = 'yes'; out.className = 'v good'; r.innerHTML = routeBadge('auto') + ' yes로 처리'; }
+    else if (p <= 0.3){ out.textContent = 'no'; out.className = 'v good'; r.innerHTML = routeBadge('auto') + ' no로 처리'; }
+    else { out.textContent = '애매'; out.className = 'v warn'; r.innerHTML = routeBadge('confirm') + ' 제3의 결과: 사람 검토'; }
+  }
+  s.addEventListener('input', up); up();
+})();
+
+/* ---------- 4.4 Choice confidence ---------- */
+(function(){
+  const names = ['billing','technical','account'];
+  let w = [88, 11, 1];
+  const box = $('#cSliders');
+  box.innerHTML = names.map((n, i) => `<div class="ctrl"><span>${n}</span><input type="range" min="0" max="100" value="${w[i]}" data-ci="${i}" aria-label="${n} 가중치"><span class="mono" data-cv="${i}"></span></div>`).join('');
+  function up(){
+    const p = normalize(w);
+    renderBars($('#cBars'), names, p);
+    $$('[data-cv]').forEach(el => el.textContent = fmt(p[+el.dataset.cv]));
+    const pm = Math.max(...p), conf = choiceConf(p);
+    $('#cPick').textContent = names[p.indexOf(pm)];
+    $('#cPmax').textContent = fmt(pm);
+    const c = $('#cConf'); c.textContent = fmt(conf); c.className = 'v ' + (conf >= 0.9 ? 'good' : conf >= 0.5 ? 'warn' : 'bad');
+  }
+  box.addEventListener('input', e => { const i = e.target.dataset.ci; if (i == null) return; w[+i] = +e.target.value; if (w.every(v => v === 0)) w[+i] = 1; up(); });
+  $$('[data-cpreset]').forEach(b => b.addEventListener('click', () => {
+    w = b.dataset.cpreset.split(',').map(x => Math.round(parseFloat(x) * 100));
+    $$('input[data-ci]').forEach((s, i) => s.value = w[i]); up();
+  }));
+  up();
+})();
+
+/* ---------- 4.4 Score confidence ---------- */
+(function(){
+  let n = 5, w = [0, 50, 50, 0, 0];
+  const presets = {
+    3: [['이웃 분할 (0, .5, .5)', [0,50,50]], ['양 끝 분할 (.5, 0, .5)', [50,0,50]], ['공식 예제 (0, .57, .43)', [0,57,43]], ['버그 심각도 (0, .79, .21)', [0,79,21]]],
+    5: [['이웃 분할', [0,50,50,0,0]], ['양 끝 분할', [50,0,0,0,50]], ['한 레벨 확신', [0,0,100,0,0]], ['균등', [20,20,20,20,20]]]
+  };
+  function build(){
+    $('#sPresets').innerHTML = presets[n].map((p, i) => `<button class="btn small" type="button" data-sp="${i}">${p[0]}</button>`).join('');
+    $('#sSliders').innerHTML = w.map((v, i) => `<div class="ctrl"><span>레벨 ${i}</span><input type="range" min="0" max="100" value="${v}" data-si="${i}" aria-label="레벨 ${i} 가중치"><span class="mono" data-sv="${i}"></span></div>`).join('');
+    up();
+  }
+  function up(){
+    const p = normalize(w);
+    renderBars($('#sBars'), p.map((_, i) => '레벨 ' + i), p);
+    $$('[data-sv]').forEach(el => el.textContent = fmt(p[+el.dataset.sv]));
+    const r = scoreOf(p);
+    $('#sScore').textContent = fmt(r.score);
+    $('#sMode').textContent = r.mode;
+    const c = $('#sConf'); c.textContent = fmt(r.confidence, 3); c.className = 'v ' + (r.confidence >= 0.7 ? 'good' : r.confidence >= 0.3 ? 'warn' : 'bad');
+  }
+  $('#sSliders').addEventListener('input', e => { const i = e.target.dataset.si; if (i == null) return; w[+i] = +e.target.value; if (w.every(v => v === 0)) w[+i] = 1; up(); });
+  $('#sPresets').addEventListener('click', e => { const b = e.target.closest('[data-sp]'); if (!b) return; w = presets[n][+b.dataset.sp][1].slice(); build(); });
+  $$('[data-slevels]').forEach(b => b.addEventListener('click', () => {
+    n = +b.dataset.slevels; $$('[data-slevels]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    w = presets[n][0][1].slice(); build();
+  }));
+  build();
+})();
+
+/* ---------- 4.5 reliability diagram ---------- */
+const sig = x => 1 / (1 + Math.exp(-x));
+const logit = p => Math.log(p / (1 - p));
+function drawRel(){
+  const k = $('#relK').value / 100;
+  $('#relKv').textContent = fmt(k);
+  const W = 320, H = 300, pad = 36, iw = W - pad - 10, ih = H - pad - 14;
+  const bins = Array.from({ length: 10 }, (_, i) => (i + 0.5) / 10);
+  const weights = normalize(bins.map(c => 0.4 + c * c * 2));  // more mass at high confidence
+  const acc = bins.map(c => sig(logit(c) / k));
+  const ece = bins.reduce((a, c, i) => a + weights[i] * Math.abs(acc[i] - c), 0);
+  const x = v => pad + v * iw, y = v => 14 + (1 - v) * ih;
+  let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="신뢰도 다이어그램">`;
+  g += `<line class="axis" x1="${pad}" y1="${y(0)}" x2="${x(1)}" y2="${y(0)}"/><line class="axis" x1="${pad}" y1="${y(0)}" x2="${pad}" y2="${y(1)}"/>`;
+  [0, .5, 1].forEach(t => { g += `<text x="${x(t)}" y="${H - 18}" text-anchor="middle">${t}</text><text x="${pad - 6}" y="${y(t) + 4}" text-anchor="end">${t}</text>`; });
+  g += `<text x="${pad + iw / 2}" y="${H - 3}" text-anchor="middle">모델이 말한 확률 (conf)</text>`;
+  g += `<text transform="translate(10 ${14 + ih / 2}) rotate(-90)" text-anchor="middle">실제 정확도</text>`;
+  const bw = iw / 10 - 4;
+  bins.forEach((c, i) => {
+    const bx = x(i / 10) + 2;
+    g += `<rect class="bin" x="${bx}" y="${y(acc[i])}" width="${bw}" height="${y(0) - y(acc[i])}" rx="2"/>`;
+    const top = Math.max(acc[i], c), bot = Math.min(acc[i], c);
+    if (top - bot > 0.004) g += `<rect class="gap" x="${bx}" y="${y(top)}" width="${bw}" height="${y(bot) - y(top)}"/>`;
+  });
+  g += `<line class="diag" x1="${x(0)}" y1="${y(0)}" x2="${x(1)}" y2="${y(1)}"/></svg>`;
+  $('#relChart').innerHTML = g;
+  $('#relEce').textContent = fmt(ece, 3);
+  $('#relState').textContent = Math.abs(k - 1) < 0.06 ? '보정됨' : k > 1 ? '과신 (overconfident)' : '과소신뢰 (underconfident)';
+}
+$('#relK').addEventListener('input', drawRel);
+drawRel();
+
+/* ---------- 5.1 latency race ---------- */
+(function(){
+  const rows = [
+    { l: 'NDM: 캐시된 state에 질문 1개 추가', ms: 4.9, cls: 'ndm', v: '0.8–4.9ms' },
+    { l: 'NDM: state 4,096토큰 인코딩', ms: 59, cls: 'ndm', v: '59ms' },
+    { l: 'Jev: 29.8k 토큰 state + 질문 1개', ms: 214, cls: '', v: '214ms' },
+    { l: 'Jev: 29.8k 토큰 + 질문 1,500개 (중앙값)', ms: 610, cls: '', v: '610ms' },
+    { l: 'System 2 추론 LLM (공식 비교 기준 하한)', ms: 3000, cls: 'gen', v: '3s~' },
+    { l: '가정: 2,714 출력 토큰을 실제 생성 (100 tok/s)', ms: 27140, cls: 'gen', v: '≈27s' }
+  ];
+  const race = $('#race');
+  race.innerHTML = rows.map(r => `<div class="race-row"><span class="rl">${r.l}</span><div class="race-track"><div class="race-fill ${r.cls}" data-ms="${r.ms}"></div><span class="race-val">${r.v}</span></div></div>`).join('');
+  const pos = ms => Math.max(2, Math.min(100, (Math.log10(ms) - 0) / 5 * 100)); // 1ms..100s
+  function run(){
+    const fills = $$('.race-fill', race);
+    fills.forEach(f => { f.style.transition = 'none'; f.style.width = '0'; });
+    void race.offsetWidth;
+    fills.forEach(f => { f.style.transition = ''; f.style.width = pos(+f.dataset.ms) + '%'; });
+  }
+  $('#raceRun').addEventListener('click', run);
+  if ('IntersectionObserver' in window){
+    const io = new IntersectionObserver(es => { if (es[0].isIntersecting){ run(); io.disconnect(); } }, { threshold: .4 });
+    io.observe(race);
+  } else run();
+})();
+
+/* ---------- 5.2 cascade simulator ---------- */
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const casData = (() => { const r = mulberry32(42); return Array.from({ length: 2000 }, () => Math.min(0.995, 0.34 + 0.66 * Math.pow(r(), 0.35))); })();
+const S2_ACC = 0.95;
+function casEval(theta, ratio){
+  let esc = 0, accSum = 0;
+  for (const c of casData){ if (c < theta){ esc++; accSum += S2_ACC; } else accSum += c; }
+  const N = casData.length, r = esc / N;
+  return { r, acc: accSum / N, cost: 1 + r * ratio };
+}
+function drawCascade(){
+  const theta = $('#casT').value / 100, ratio = +$('#casC').value;
+  $('#casTv').textContent = fmt(theta); $('#casCv').textContent = ratio + '×';
+  const e = casEval(theta, ratio);
+  $('#casR').textContent = (e.r * 100).toFixed(1) + '%';
+  $('#casAcc').textContent = (e.acc * 100).toFixed(1) + '%';
+  $('#casCost').textContent = e.cost.toFixed(1);
+  $('#casSave').textContent = ((e.cost / ratio) * 100).toFixed(1) + '%';
+  const W = 640, H = 220, pad = 40, iw = W - pad - 14, ih = H - 40;
+  const x = t => pad + (t - 0.3) / 0.69 * iw, y = v => 10 + (1 - v) * ih;
+  let pa = '', pr = '';
+  for (let t = 0.30; t <= 0.991; t += 0.01){ const v = casEval(t, ratio); pa += (pa ? 'L' : 'M') + x(t).toFixed(1) + ' ' + y(v.acc).toFixed(1); pr += (pr ? 'L' : 'M') + x(t).toFixed(1) + ' ' + y(v.r).toFixed(1); }
+  let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="임계값에 따른 정확도와 에스컬레이션 비율">`;
+  [0, .25, .5, .75, 1].forEach(v => { g += `<line class="axis" x1="${pad}" y1="${y(v)}" x2="${W - 14}" y2="${y(v)}" opacity=".5"/><text x="${pad - 6}" y="${y(v) + 4}" text-anchor="end">${v * 100}%</text>`; });
+  [0.3, 0.5, 0.7, 0.9].forEach(t => { g += `<text x="${x(t)}" y="${H - 12}" text-anchor="middle">θ=${t}</text>`; });
+  g += `<path class="l1" d="${pa}"/><path class="l2" d="${pr}"/>`;
+  g += `<line class="marker" x1="${x(theta)}" y1="${y(1)}" x2="${x(theta)}" y2="${y(0)}"/>`;
+  g += `<circle cx="${x(theta)}" cy="${y(e.acc)}" r="4" fill="var(--accent)"/><circle cx="${x(theta)}" cy="${y(e.r)}" r="4" fill="var(--accent-2)"/></svg>`;
+  $('#casChart').innerHTML = g;
+}
+$('#casT').addEventListener('input', drawCascade); $('#casC').addEventListener('input', drawCascade);
+drawCascade();
+
+/* ---------- 6.1 stepper ---------- */
+(function(){
+  const req = `{
+  "model": "jev-latest",
+  "state": {
+    "ticket": "Hi, I was charged twice for my Pro subscription this month. Please fix this before my next payroll run on Friday."
+  },
+  "questions": {
+    "team":    { "type": "choice", "instructions": "Which team should handle \`ticket\`?",
+                 "criteria": { "billing": "...", "technical": "...", "account": "..." } },
+    "urgency": { "type": "score",  "instructions": "How urgent is \`ticket\`?",
+                 "levels": ["No deadline", "Soon, nothing blocked", "Deadline named / blocked"] },
+    "refund":  { "type": "noul",   "instructions": "Is the customer asking for money back?" }
+  }
+}`;
+  const res = `{
+  "answers": {
+    "team":    { "choice": "billing",
+                 "probabilities": { "billing": 1, "technical": 0, "account": 0 },
+                 "confidence": 1 },
+    "urgency": { "score": 2,
+                 "probabilities": { "0": 0, "1": 0, "2": 1 },
+                 "confidence": 1 },
+    "refund":  { "noul": 0.82 }
+  },
+  "usage": { "input_tokens": 447 }     // 비용 약 $0.000019
+}`;
+  const steps = [
+    { t: '분해', html: `<div><p style="margin-top:0">“이 티켓을 어떻게 처리할까?”를 한 번에 묻지 않고, <b>원자적 질문 세 개</b>로 나눈다.</p>
+        <div class="table-wrap"><table><tr><th>ID</th><th>Primitive</th><th>질문</th></tr>
+        <tr><td><code>team</code></td><td>Choice</td><td>billing / technical / account 중 어느 팀?</td></tr>
+        <tr><td><code>urgency</code></td><td>Score</td><td>기한 없음 / 빨리 원하지만 막힌 것 없음 / 기한 명시 또는 업무 차단</td></tr>
+        <tr><td><code>refund</code></td><td>Noul</td><td>고객이 돈을 돌려달라고 하는가?</td></tr></table></div>
+        <p class="small muted">질문 ID는 모델에 전달되지 않는다. 의미는 모두 instructions와 criteria에 담는다.</p></div>
+        <div class="callout info" style="margin:0"><strong>왜 쪼개나?</strong><p>한 질문에 판단 하나만 담아야 “전문가가 몇 초 안에 내리는 직감”이 된다. 결합(우선순위 결정)은 코드가 맡는다.</p></div>` },
+    { t: '요청', html: `<div><pre class="json">${esc(req)}</pre></div>
+        <div><p style="margin-top:0">state 하나와 질문 셋을 <b>한 요청</b>에 담는다. state는 한 번만 인코딩되고, 세 질문은 격리된 가지에서 병렬로 평가된다.</p>
+        <p class="small muted"><span class="tag illus">개념적 구조</span> SDK가 만들어 보내는 내용을 단순화했다. 실제 wire 포맷은 공식 API 레퍼런스를 확인할 것.</p></div>` },
+    { t: '응답', html: `<div><pre class="json">${esc(res)}</pre></div>
+        <div><p style="margin-top:0"><span class="tag observed">관측</span> OpenRouter 블로그(2026-10-16)에 실린 jev-1.14의 실제 응답 값이다.</p>
+        <h4>team</h4><div class="bars" id="stB1"></div><h4>urgency</h4><div class="bars" id="stB2"></div><h4>refund</h4><div class="bars" id="stB3"></div></div>` },
+    { t: '수식 검산', html: `<div>
+        <ul class="tight">
+          <li><b>team confidence</b> = (1 − 1/3) / (1 − 1/3) = <b>1</b></li>
+          <li><b>urgency score</b> = 0×0 + 1×0 + 2×1 = <b>2</b></li>
+          <li><b>refund</b> 0.82 ≥ 0.7 → <b>yes</b></li>
+        </ul></div>
+        <div class="callout warn" style="margin:0"><strong>값이 흔들릴 수 있다</strong><p>같은 요청을 반복하면 확률이 조금 달라질 수 있다(같은 Score가 1.21 / 1.17). 임계값은 정확한 값이 아니라 구간으로 잡는다.</p></div>` },
+    { t: '코드 분기', html: `<div><p style="margin-top:0"><b>정책은 코드가 쥔다.</b></p>
+        <ul class="tight"><li>team = billing, conf 1 ≥ 0.5 → <b>billing 큐</b></li><li>urgency score 2 ≥ 1.5, conf 1 ≥ 0.7 → <b>high priority</b></li><li>refund 0.82 ≥ 0.7 → <b>환불 플래그 yes</b></li></ul>
+        <p>${routeBadge('auto')} billing · high · refund=yes</p></div>
+        <div><h4 style="margin-top:0">애매한 사례와 비교</h4>
+        <p class="small">“I upgraded to Pro yesterday but the dashboard still says Free and I got charged. Which one is it?”</p>
+        <div class="bars" id="stB4"></div>
+        <p class="small">conf = (0.88 − 1/3) / (2/3) = <b>0.82</b>. 저위험이면 ${routeBadge('auto')}, 고위험이면 ${routeBadge('confirm')}.</p>
+        <p class="small">“카드에 청구가 두 번 있는데, 하나가 실수라면 선택지가 뭔가요?”의 refund Noul은 <b>0.42–0.45</b>였다. 중간대이므로 ${routeBadge('confirm')} <b>세 번째 결과(사람 확인)</b>로 처리한다.</p></div>` }
+  ];
+  let cur = 0;
+  const nav = $('#stepNav'), body = $('#stepBody');
+  nav.innerHTML = steps.map((s, i) => `<button class="btn small step-btn" type="button" role="tab" data-step="${i}"><span class="n">${i + 1}</span>${s.t}</button>`).join('');
+  function show(i){
+    cur = Math.max(0, Math.min(steps.length - 1, i));
+    $$('[data-step]', nav).forEach((b, j) => b.setAttribute('aria-pressed', String(j === cur)));
+    body.innerHTML = `<div class="step-body">${steps[cur].html}</div>`;
+    if ($('#stB1')){ renderBars($('#stB1'), ['billing','technical','account'], [1,0,0]); renderBars($('#stB2'), ['0','1','2'], [0,0,1]); renderBars($('#stB3'), ['P(yes)'], [0.82]); }
+    if ($('#stB4')) renderBars($('#stB4'), ['billing','technical','account'], [0.88, 0.11, 0.01]);
+    $('#stepPrev').disabled = cur === 0; $('#stepNext').disabled = cur === steps.length - 1;
+  }
+  nav.addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b) show(+b.dataset.step); });
+  $('#stepPrev').addEventListener('click', () => show(cur - 1));
+  $('#stepNext').addEventListener('click', () => show(cur + 1));
+  show(0);
+})();
+
+/* ---------- 6.4 tree ---------- */
+let treeMode = 'greedy';
+const TREE = {
+  nodes: { R: { x: 320, y: 30, t: '품목 (root)' }, A: { x: 160, y: 115, t: '사무용품' }, B: { x: 480, y: 115, t: '전산 장비' },
+           A1: { x: 80, y: 205, t: '필기구' }, A2: { x: 240, y: 205, t: '복사용지' }, B1: { x: 400, y: 205, t: '노트북' }, B2: { x: 560, y: 205, t: '모니터' } },
+  edges: [['R','A',0.55],['R','B',0.45],['A','A1',0.52],['A','A2',0.48],['B','B1',0.95],['B','B2',0.05]]
+};
+function drawTree(){
+  const hl = new Set(), kept = new Set(), hlN = new Set(), keptN = new Set();
+  if (treeMode === 'greedy'){ ['R-A','A-A1'].forEach(e => hl.add(e)); ['R','A','A1'].forEach(n => hlN.add(n)); }
+  else { ['R-A','R-B','A-A1','A-A2'].forEach(e => kept.add(e)); ['A','A1','A2'].forEach(n => keptN.add(n)); ['R-B','B-B1'].forEach(e => { kept.delete(e); hl.add(e); }); ['R','B','B1'].forEach(n => hlN.add(n)); }
+  const N = TREE.nodes;
+  let g = '<svg viewBox="0 0 640 240" role="img" aria-label="분류 트리">';
+  TREE.edges.forEach(([a, b, p]) => {
+    const k = a + '-' + b, A = N[a], B = N[b];
+    g += `<line class="edge ${hl.has(k) ? 'hl' : kept.has(k) ? 'kept' : ''}" x1="${A.x}" y1="${A.y + 14}" x2="${B.x}" y2="${B.y - 14}"/>`;
+    g += `<text class="ep" x="${(A.x + B.x) / 2 + (B.x < A.x ? -14 : 14)}" y="${(A.y + B.y) / 2 + 4}" text-anchor="middle">${p.toFixed(2)}</text>`;
+  });
+  Object.entries(N).forEach(([id, n]) => {
+    const w = n.t.length * 13 + 22;
+    g += `<g class="node ${hlN.has(id) ? 'hl' : keptN.has(id) ? 'kept' : ''}"><rect x="${n.x - w / 2}" y="${n.y - 14}" width="${w}" height="28" rx="8"/><text x="${n.x}" y="${n.y + 5}" text-anchor="middle">${n.t}</text></g>`;
+  });
+  $('#treeSvg').innerHTML = g + '</svg>';
+  const paths = [['사무용품 → 필기구', [0.55, 0.52]], ['사무용품 → 복사용지', [0.55, 0.48]], ['전산 장비 → 노트북', [0.45, 0.95]], ['전산 장비 → 모니터', [0.45, 0.05]]]
+    .map(([n, ps]) => ({ n, ps, geo: Math.exp(ps.reduce((a, p) => a + Math.log(p), 0) / ps.length) }));
+  let rows = '<tr><th>경로</th><th>간선 확률</th><th>기하평균 점수</th><th>결과</th></tr>';
+  if (treeMode === 'greedy'){
+    rows += `<tr><td>1단계</td><td>사무용품 0.55 vs 전산 장비 0.45</td><td>-</td><td>사무용품 선택 (되돌릴 수 없음)</td></tr>`;
+    rows += `<tr><td>2단계</td><td>필기구 0.52 vs 복사용지 0.48</td><td>${fmt(paths[0].geo, 3)}</td><td><b>필기구</b> (거의 동전 던지기)</td></tr>`;
+  } else {
+    const best = Math.max(...paths.map(p => p.geo));
+    [...paths].sort((a, b) => b.geo - a.geo).forEach((p, i) => { rows += `<tr><td>${p.n}</td><td>${p.ps.map(x => x.toFixed(2)).join(' × ')}</td><td>${fmt(p.geo, 3)}</td><td>${p.geo === best ? '<b>✓ 선택</b>' : i < 3 ? '빔 유지' : '탈락'}</td></tr>`; });
+  }
+  $('#treeTable').innerHTML = rows;
+}
+$$('[data-tree]').forEach(b => b.addEventListener('click', () => { treeMode = b.dataset.tree; $$('[data-tree]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); drawTree(); }));
+drawTree();
+
+/* ---------- 7. flip bars ---------- */
+renderBars($('#flipBars'), ['Jev', '생성형 (최소)', '파인튜닝 결정 (최대)'], [50.5, 16.8, 6.5], { max: 100, raw: true, noTop: true });
+
+/* ---------- 10. quiz ---------- */
+(function(){
+  const Q = [
+    { q: 'Choice 선택지 3개의 확률이 (0.6, 0.3, 0.1)일 때 confidence는?', o: ['0.2', '0.4', '0.6', '0.9'], a: 1, e: '(0.6 − 1/3) / (2/3) = 0.4. 최고 확률만 보므로 (0.6, 0.2, 0.2)도 0.4다.', s: 's4' },
+    { q: 'Score 확률이 (0, 0.79, 0.21)일 때 score는?', o: ['0.79', '1.00', '1.21', '2.00'], a: 2, e: '0×0 + 1×0.79 + 2×0.21 = 1.21', s: 's4' },
+    { q: 'Noul 0.45를 받았다. 공식 권장에 따른 처리는?', o: ['yes로 자동 처리', 'no로 자동 처리', '사람 검토 (제3의 결과)', '같은 요청을 반복해 평균'], a: 2, e: '0.3–0.7 구간은 애매하므로 사람에게 넘긴다.', s: 's4' },
+    { q: '무관한 선택지를 추가했더니 두 선택지의 로그 오즈가 변했다. 이것이 배제하는 가설은?', o: ['listwise 채점', 'pointwise 독립 채점', '질문 격리', 'prefix caching'], a: 1, e: '독립(pointwise) 채점이라면 ln(p_i/p_j) = z_i − z_j가 변하지 않아야 한다.', s: 's3' },
+    { q: '보상 r = c − p의 REINFORCE 기대 그래디언트는 어떤 손실의 그래디언트와 같은가?', o: ['교차 엔트로피의 −1배', 'Brier 점수의 −1/2배', '0/1 정확도', 'KL 발산'], a: 1, e: 'Σ(c_a − p_a)∇p_a = −½∇Σ(p_a − c_a)². strictly proper scoring rule이다.', s: 's4' },
+    { q: '“과일이 몇 개인가?”를 질문 하나로 묻지 말아야 하는 이유는?', o: ['비용이 비싸서', '수치 정밀도에 약해서. 항목별 Noul + 코드 합산', 'Choice는 숫자를 못 다뤄서', '이미지 입력이 필요해서'], a: 1, e: 'jaggedness 문서: 산술·개수 세기는 코드로, 의미 판단만 Jev로.', s: 's6' },
+    { q: '질문 ID를 refund로만 두고 instructions를 비우면?', o: ['ID에서 의미를 추론한다', 'ID는 모델에 전달되지 않아 의미가 전달되지 않는다', '자동으로 Noul이 된다', '오류 없이 0.5를 반환한다'], a: 1, e: '질문 ID는 모델에 전달되지 않는다. 의미는 instructions와 criteria에 담아야 한다.', s: 's3' },
+    { q: 'JEPA와 Jev의 관계로 옳은 것은?', o: ['JEPA는 Jev의 기반 아키텍처다', 'Jev는 JEPA의 상용 버전이다', '이름만 비슷한 별개 계열이다', '둘 다 TypeSafe 제품이다'], a: 2, e: 'JEPA는 임베딩 공간 예측 기반의 자기지도 학습 아키텍처, Jev는 타입 판단 API 모델이다.', s: 's7' }
+  ];
+  const wrap = $('#quiz'); let score = 0, answered = 0;
+  wrap.innerHTML = Q.map((x, i) => `<div class="qcard" data-q="${i}"><div class="qtitle">Q${i + 1}. ${esc(x.q)}</div>
+    <div class="qopts">${x.o.map((o, j) => `<button class="btn qopt" type="button" data-o="${j}">${esc(o)}</button>`).join('')}</div>
+    <div class="qexp"></div></div>`).join('');
+  wrap.addEventListener('click', e => {
+    const b = e.target.closest('.qopt'); if (!b) return;
+    const card = b.closest('.qcard'); if (card.classList.contains('done')) return;
+    const x = Q[+card.dataset.q], j = +b.dataset.o;
+    card.classList.add('done'); answered++;
+    $$('.qopt', card).forEach((o, k) => { if (k === x.a) o.classList.add('correct'); });
+    if (j === x.a){ score++; $('.qexp', card).innerHTML = '✓ 정답. ' + esc(x.e); }
+    else { b.classList.add('wrong'); $('.qexp', card).innerHTML = `✗ ${esc(x.e)} <a href="#${x.s}">관련 섹션으로 →</a>`; }
+    $('#quizScore').textContent = `${score} / ${Q.length}` + (answered === Q.length ? ' 완료' : '');
+  });
+})();
+
+/* ---------- 10. sandbox ---------- */
+(function(){
+  const defs = [
+    { name: 'team', type: 'choice', opts: '세무회계, 영업관리, 전산지원, 기타', high: false },
+    { name: 'urgency', type: 'score', opts: '기한 없음, 빨리 원함, 기한 명시·업무 차단', high: false },
+    { name: 'reissue', type: 'noul', opts: '세금계산서 재발행(정정)을 요청하는가?', high: true }
+  ];
+  let seed = 1;
+  const box = $('#sbQs');
+  box.innerHTML = defs.map((d, i) => `<div class="sb-q" data-sq="${i}">
+      <input type="text" value="${esc(d.name)}" data-f="name" aria-label="질문 ${i + 1} 이름">
+      <select data-f="type" aria-label="질문 ${i + 1} 타입"><option value="choice">Choice</option><option value="score">Score</option><option value="noul">Noul</option></select>
+      <input type="text" value="${esc(d.opts)}" data-f="opts" aria-label="질문 ${i + 1} 선택지">
+      <label><input type="checkbox" data-f="high" ${d.high ? 'checked' : ''}> 고위험</label>
+    </div>`).join('');
+  $$('.sb-q', box).forEach((row, i) => { $('[data-f=type]', row).value = defs[i].type; });
+  const hint = { choice: '선택지를 쉼표로 구분', score: '레벨을 낮은 것부터 쉼표로 구분', noul: '예/아니오로 답할 명제' };
+  function syncPlaceholders(){ $$('.sb-q', box).forEach(row => { $('[data-f=opts]', row).placeholder = hint[$('[data-f=type]', row).value]; }); }
+  box.addEventListener('change', syncPlaceholders); syncPlaceholders();
+  function hash(str){ let h = 2166136261 ^ seed; for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  const fakeLogit = s => { const r = mulberry32(hash(s)); return (r() + r() + r() - 1.5) * 3.2; };
+  function run(){
+    const state = $('#sbState').value.trim();
+    const out = $$('.sb-q', box).map(row => {
+      const name = $('[data-f=name]', row).value.trim() || 'q';
+      const type = $('[data-f=type]', row).value;
+      const raw = $('[data-f=opts]', row).value;
+      const high = $('[data-f=high]', row).checked;
+      if (type === 'noul'){
+        const p = 1 / (1 + Math.exp(-fakeLogit(state + '|' + name + '|' + raw)));
+        const ans = p >= 0.7 ? 'yes' : p <= 0.3 ? 'no' : 'review';
+        const conf = Math.abs(2 * p - 1);
+        const r = ans === 'review' ? 'confirm' : (high && p < 0.9 && p > 0.1 ? 'confirm' : 'auto');
+        return { name, type, high, html: `<div class="bars" data-bars="${encodeURIComponent(JSON.stringify({ l: ['P(yes)'], p: [p] }))}"></div><p class="small muted" style="margin:6px 0 0">noul = ${fmt(p)} · |2p−1| = ${fmt(conf)} · 판정: <b>${ans}</b>${high ? ' · 고위험: yes ≥ 0.9 또는 no ≤ 0.1일 때만 자동' : ''}</p>`, r, json: { noul: +fmt(p) } };
+      }
+      const opts = raw.split(',').map(s => s.trim()).filter(Boolean);
+      if (opts.length < 2) return { name, type, high, html: '<p class="small" style="color:var(--bad)">선택지를 2개 이상 쉼표로 입력하자.</p>', r: null };
+      const p = softmax(opts.map(o => fakeLogit(state + '|' + name + '|' + o)), 0.8);
+      if (type === 'choice'){
+        const c = choiceConf(p), pick = opts[p.indexOf(Math.max(...p))], r = route(c, high);
+        return { name, type, high, r, html: `<div class="bars" data-bars="${encodeURIComponent(JSON.stringify({ l: opts, p }))}"></div><p class="small muted" style="margin:6px 0 0">choice = <b>${esc(pick)}</b> · confidence = (${fmt(Math.max(...p))} − 1/${opts.length}) / (1 − 1/${opts.length}) = <b>${fmt(c)}</b></p>`, json: { choice: pick, confidence: +fmt(c) } };
+      }
+      const s = scoreOf(p), r = route(s.confidence, high);
+      return { name, type, high, r, html: `<div class="bars" data-bars="${encodeURIComponent(JSON.stringify({ l: opts.map((o, i) => i + ' ' + o), p }))}"></div><p class="small muted" style="margin:6px 0 0">score = Σ i·p<sub>i</sub> = <b>${fmt(s.score)}</b> · 최빈 레벨 ${s.mode} · confidence = <b>${fmt(s.confidence)}</b></p>`, json: { score: +fmt(s.score), confidence: +fmt(s.confidence) } };
+    });
+    $('#sbResults').innerHTML = out.map(o => `<div class="sb-res"><div class="h"><span><code>${esc(o.name)}</code> · ${o.type}${o.high ? ' · <span class="tag self">고위험</span>' : ''}</span>${o.r ? routeBadge(o.r) : ''}</div>${o.html}</div>`).join('');
+    $$('#sbResults [data-bars]').forEach(el => { const d = JSON.parse(decodeURIComponent(el.dataset.bars)); renderBars(el, d.l, d.p); });
+  }
+  $('#sbRun').addEventListener('click', run);
+  $('#sbReseed').addEventListener('click', () => { seed++; run(); });
+  run();
+})();
+
+})();
+</script>
+</body>
+</html>
